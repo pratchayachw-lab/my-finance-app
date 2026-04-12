@@ -34,6 +34,7 @@
         input[type="date"], select, input[type="number"] { font-size: 16px !important; }
         .edit-mode { border: 2px solid #fbbf24 !important; background-color: #fffbeb !important; }
         .loading-overlay { background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="text-slate-800 pb-24">
@@ -42,30 +43,37 @@
     <div id="loading-screen" class="hidden fixed inset-0 z-[100] flex items-center justify-center loading-overlay">
         <div class="text-center p-6 bg-white rounded-3xl shadow-2xl">
             <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-            <p class="text-sm font-bold text-brand-700" id="loading-text">กำลังซิงค์ข้อมูลกับ Cloud...</p>
+            <p class="text-sm font-bold text-brand-700" id="loading-text">กำลังจัดการข้อมูล...</p>
         </div>
     </div>
 
-    <!-- Header -->
-    <header class="bg-white border-b border-slate-100 sticky top-0 z-40 px-5 py-4 flex justify-between items-center shadow-sm">
-        <div class="flex items-center gap-4" onclick="switchTab('overview')">
-            <div class="flex items-center gap-2">
-                <div class="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg">฿</div>
-                <div>
-                    <h1 class="text-[10px] font-bold text-slate-400 uppercase leading-none">Net Worth</h1>
-                    <span class="text-lg font-black text-brand-700" id="display-net-worth">฿ 0.00</span>
+    <!-- Header Status Bar -->
+    <header class="bg-white border-b border-slate-100 sticky top-0 z-40 px-3 py-4 flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <!-- Net Worth -->
+            <div class="flex items-center gap-1.5 shrink-0" onclick="switchTab('overview')">
+                <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white text-base shadow-lg">฿</div>
+                <div class="leading-tight">
+                    <h1 class="text-[9px] font-bold text-slate-400 uppercase">Net Worth</h1>
+                    <span class="text-sm font-black text-brand-700" id="display-net-worth">฿ 0.00</span>
                 </div>
             </div>
-            <div class="border-l border-slate-100 pl-4">
-                <h1 class="text-[10px] font-bold text-slate-400 uppercase leading-none">Month Net (จริง)</h1>
-                <span class="text-lg font-black" id="display-cash-flow">฿ 0.00</span>
+            <!-- Month Net (จริง) -->
+            <div class="border-l border-slate-100 pl-2 leading-tight shrink-0">
+                <h1 class="text-[9px] font-bold text-slate-400 uppercase">Net (จริง)</h1>
+                <span class="text-sm font-black text-brand-600" id="display-cash-flow">฿ 0.00</span>
+            </div>
+            <!-- Month Net (แผน) -->
+            <div class="border-l border-slate-100 pl-2 leading-tight shrink-0">
+                <h1 class="text-[9px] font-bold text-slate-400 uppercase">Net (แผน)</h1>
+                <span class="text-sm font-black text-slate-400" id="display-plan-net">฿ 0.00</span>
             </div>
         </div>
         
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 shrink-0">
             <div id="sync-status" class="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
-            <button id="sync-toggle-btn" onclick="toggleSyncMode()" class="w-12 h-12 rounded-2xl flex items-center justify-center border transition-all active:scale-90 shadow-sm">
-                <span id="sync-icon" class="text-xl">☁️</span>
+            <button id="sync-toggle-btn" onclick="toggleSyncMode()" class="w-10 h-10 rounded-xl flex items-center justify-center border transition-all active:scale-90 shadow-sm">
+                <span id="sync-icon" class="text-lg">☁️</span>
             </button>
         </div>
     </header>
@@ -74,11 +82,11 @@
         
         <!-- VIEW: OVERVIEW -->
         <div id="view-overview" class="fade-in space-y-6">
-            <!-- Actual Cash Flow Summary Card -->
+            <!-- Summary Dashboard -->
             <div class="bg-white p-5 rounded-xl3 border border-slate-200 shadow-sm overflow-hidden">
                 <div class="flex justify-between items-center mb-4">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">กระแสเงินสดจริง</h4>
-                    <div id="cloud-indicator" class="text-[8px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 uppercase">ONLINE</div>
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">สรุปกระแสเงินสดเดือนนี้</h4>
+                    <div id="cloud-indicator" class="text-[8px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 uppercase tracking-widest">Syncing...</div>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
                     <div class="text-center p-2 rounded-2xl bg-emerald-50">
@@ -96,17 +104,17 @@
                 </div>
             </div>
 
-            <!-- Transaction Form Card -->
-            <div id="form-container" class="bg-white p-5 rounded-xl3 border border-slate-200 shadow-sm">
+            <!-- Form Card -->
+            <div id="form-container" class="bg-white p-5 rounded-xl3 border border-slate-200 shadow-sm transition-all duration-300">
                 <div class="flex justify-between items-center mb-4">
                     <h3 id="form-title" class="font-bold text-slate-800 text-lg">บันทึกรายการ</h3>
-                    <div id="edit-indicator" class="hidden text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded">โหมดแก้ไข</div>
+                    <div id="edit-indicator" class="hidden text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded tracking-wider uppercase leading-none">Editing Hist.</div>
                 </div>
                 <form onsubmit="handleTransaction(event)" class="space-y-4">
                     <div class="flex p-1 bg-slate-100 rounded-2xl">
-                        <button type="button" onclick="setTxType('expense')" id="btn-type-expense" class="flex-1 py-2 text-sm font-bold rounded-xl bg-white shadow-sm text-expense">จ่าย</button>
-                        <button type="button" onclick="setTxType('income')" id="btn-type-income" class="flex-1 py-2 text-sm font-bold rounded-xl text-slate-500">รับ</button>
-                        <button type="button" onclick="setTxType('transfer')" id="btn-type-transfer" class="flex-1 py-2 text-sm font-bold rounded-xl text-slate-500">โอน</button>
+                        <button type="button" onclick="setTxType('expense')" id="btn-type-expense" class="flex-1 py-2 text-sm font-bold rounded-xl bg-white shadow-sm text-expense transition-all">จ่าย</button>
+                        <button type="button" onclick="setTxType('income')" id="btn-type-income" class="flex-1 py-2 text-sm font-bold rounded-xl text-slate-500 transition-all">รับ</button>
+                        <button type="button" onclick="setTxType('transfer')" id="btn-type-transfer" class="flex-1 py-2 text-sm font-bold rounded-xl text-slate-500 transition-all">โอน</button>
                     </div>
                     <input type="hidden" id="tx-type" value="expense">
                     <div class="grid grid-cols-2 gap-3">
@@ -141,10 +149,10 @@
         </div>
 
         <!-- VIEW: ACCOUNTS -->
-        <div id="view-accounts" class="hidden fade-in space-y-6">
+        <div id="view-accounts" class="hidden fade-in space-y-4">
             <div class="flex justify-between items-center px-2">
                 <h3 class="text-xl font-black text-slate-800">จัดการบัญชี</h3>
-                <button onclick="openAccountModal()" class="w-12 h-12 bg-brand-600 text-white rounded-2xl shadow-lg">+</button>
+                <button onclick="openAccountModal()" class="w-12 h-12 bg-brand-600 text-white rounded-2xl shadow-lg active:scale-90">+</button>
             </div>
             <div class="bg-white p-5 rounded-xl3 shadow-sm border border-slate-100">
                 <div class="chart-container"><canvas id="assetChart"></canvas></div>
@@ -152,74 +160,40 @@
             <div id="account-grid" class="space-y-4"></div>
         </div>
 
-        <!-- VIEW: PLAN / CATEGORIES (RESTORED) -->
+        <!-- VIEW: BUDGET -->
         <div id="view-budget" class="hidden fade-in space-y-8">
-            <!-- Month Selection & Summary Card -->
-            <div class="bg-slate-900 text-white p-6 rounded-xl3 shadow-xl space-y-4 relative overflow-hidden">
-                <div class="flex justify-between items-center relative z-10">
-                    <h3 class="text-lg font-bold text-brand-400">ตัวประมาณการรายเดือน</h3>
-                    <div class="flex gap-2">
-                        <button onclick="syncLocalToCloud()" class="text-[9px] bg-white/10 px-2 py-1 rounded border border-white/10 uppercase font-black">Sync Up</button>
-                    </div>
-                </div>
-                
-                <div class="flex gap-2 overflow-x-auto pb-4 custom-scroll relative z-10" id="budget-month-selector"></div>
-
-                <!-- Plan Net Worth Summary -->
-                <div class="grid grid-cols-3 gap-3 pt-2 relative z-10">
-                    <div class="bg-white/5 p-3 rounded-2xl border border-white/10">
-                        <p class="text-[9px] font-bold text-slate-500 uppercase">เป้าหมายรับ</p>
-                        <p class="text-sm font-black text-emerald-400" id="target-inc-val">฿ 0</p>
-                    </div>
-                    <div class="bg-white/5 p-3 rounded-2xl border border-white/10">
-                        <p class="text-[9px] font-bold text-slate-500 uppercase">เป้าหมายจ่าย</p>
-                        <p class="text-sm font-black text-rose-400" id="target-exp-val">฿ 0</p>
-                    </div>
-                    <div class="bg-brand-500/20 p-3 rounded-2xl border border-brand-500/30">
-                        <p class="text-[9px] font-bold text-brand-300 uppercase">Month Net (เป้าหมาย)</p>
-                        <p class="text-sm font-black text-white" id="target-net-val">฿ 0</p>
-                    </div>
-                </div>
-                <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-600/10 rounded-full blur-3xl"></div>
-            </div>
-
             <div class="bg-white p-6 rounded-xl3 shadow-sm border border-slate-200">
-                <h3 class="text-lg font-bold text-brand-700 mb-4 uppercase text-xs tracking-widest">หมวดหมู่รายการ</h3>
+                <h3 class="text-lg font-bold text-brand-700 mb-4 uppercase text-xs tracking-widest">จัดการหมวดหมู่</h3>
                 <div class="flex flex-wrap gap-2 mb-6">
                     <select id="new-cat-type" class="p-2 border rounded-xl text-sm bg-slate-50 outline-none">
                         <option value="expense">จ่าย</option>
                         <option value="income">รับ</option>
                     </select>
                     <input type="text" id="new-cat-name" placeholder="ชื่อหมวดหมู่..." class="flex-grow p-2 border rounded-xl text-sm outline-none bg-slate-50">
-                    <button onclick="addCategory()" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-bold shadow-md shadow-brand-500/20">+</button>
+                    <button onclick="addCategory()" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-bold">+</button>
                 </div>
-                <div class="space-y-6">
-                    <div>
-                        <p class="text-[10px] font-bold text-rose-500 uppercase mb-3 tracking-widest">รายการรายจ่าย</p>
-                        <div id="cat-list-expense" class="flex flex-wrap gap-2"></div>
-                    </div>
-                    <div>
-                        <p class="text-[10px] font-bold text-emerald-500 uppercase mb-3 tracking-widest">รายการรายรับ</p>
-                        <div id="cat-list-income" class="flex flex-wrap gap-2"></div>
-                    </div>
+                <div class="space-y-4">
+                    <div><p class="text-[10px] font-bold text-rose-400 mb-2 uppercase">รายจ่าย</p><div id="cat-list-expense" class="flex flex-wrap gap-2"></div></div>
+                    <div><p class="text-[10px] font-bold text-emerald-400 mb-2 uppercase">รายรับ</p><div id="cat-list-income" class="flex flex-wrap gap-2"></div></div>
                 </div>
             </div>
 
             <div class="bg-white p-6 rounded-xl3 shadow-sm border border-slate-200">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-lg font-bold text-brand-700 uppercase text-xs tracking-widest">ตัวเลขประมาณการ: <span id="editing-month-name" class="text-slate-400"></span></h3>
-                    <button onclick="copyPrevMonthBudget()" class="text-[10px] font-bold text-brand-600 underline uppercase">ใช้แผนเดือนก่อน</button>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-brand-700 uppercase text-xs tracking-widest">ตั้งงบประมาณ: <span id="editing-month-name" class="text-slate-400"></span></h3>
+                    <button onclick="copyPrevMonthBudget()" class="text-[9px] font-bold text-brand-500 underline uppercase">เดือนก่อน</button>
                 </div>
+                <div class="flex gap-2 overflow-x-auto pb-4 custom-scroll no-scrollbar" id="budget-month-selector"></div>
                 <div id="budget-editor-income" class="space-y-4 border-b border-slate-100 pb-6"></div>
                 <div id="budget-editor-expense" class="space-y-4 pt-6"></div>
-                <button onclick="saveBudgets()" class="w-full mt-8 py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-all">บันทึกแผนประมาณการ</button>
+                <button onclick="saveBudgets()" class="w-full mt-8 py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-all">บันทึกงบประมาณ</button>
             </div>
         </div>
 
         <!-- VIEW: HISTORY -->
         <div id="view-history" class="hidden fade-in space-y-4">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                <input type="text" id="filter-search" placeholder="ค้นหา..." class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none" oninput="renderHistory()">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                <input type="text" id="filter-search" placeholder="ค้นหาประวัติ..." class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none" oninput="renderHistory()">
             </div>
             <div id="history-container" class="space-y-3"></div>
         </div>
@@ -236,7 +210,7 @@
     <!-- Account Modal -->
     <div id="account-modal" class="hidden fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-6 backdrop-blur-sm">
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl">
-            <h3 class="text-xl font-black mb-6 text-center text-slate-800">จัดการบัญชี</h3>
+            <h3 class="text-xl font-black mb-6 text-center text-slate-800 uppercase tracking-tighter">จัดการบัญชี</h3>
             <div class="space-y-4">
                 <input type="text" id="new-acc-name" placeholder="ชื่อบัญชี..." class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
                 <select id="new-acc-type" class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
@@ -244,7 +218,7 @@
                     <option value="investment">การลงทุน</option>
                     <option value="debt">หนี้สิน (ยืมเงิน)</option>
                 </select>
-                <input type="number" id="new-acc-balance" placeholder="ยอดเงินปัจจุบัน..." class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
+                <input type="number" id="new-acc-balance" placeholder="ยอดเงินเริ่มต้น..." class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
             </div>
             <div class="flex gap-2 mt-8">
                 <button onclick="saveAccount()" class="flex-1 py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-lg active:scale-95">บันทึก</button>
@@ -254,11 +228,11 @@
     </div>
 
     <script>
-        // --- ⚙️ CONFIG ---
+        // --- ⚙️ CONFIG & STATE ---
         const SUPABASE_URL = "https://xyotqopwkcxblapoaiae.supabase.co"; 
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5b3Rxb3B3a2N4YmxhcG9haWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MDI0ODMsImV4cCI6MjA5MTQ3ODQ4M30.qNBaRDz9WGAXxX0tUcBLoMg6yA4Jz4EypTT_TJuZzkk";
         
-        const VERSION = "v60_final_estimates";
+        const VERSION = "v80_stable_final";
         const ST_ACCS = `ws_accs_${VERSION}`;
         const ST_TXS = `ws_txs_${VERSION}`;
         const ST_CATS = `ws_cats_${VERSION}`;
@@ -267,13 +241,13 @@
         let supabaseClient = null;
         let isSyncActive = localStorage.getItem('ws_sync_active') !== 'false';
         
-        // Models
         let CATEGORIES = JSON.parse(localStorage.getItem(ST_CATS)) || [
-            { id: 1, name: 'เงินเดือน', type: 'income' }, { id: 2, name: 'อาหาร', type: 'expense' }, { id: 3, name: 'เดินทาง', type: 'expense' }
+            { id: 1, name: 'เงินเดือน', type: 'income' }, { id: 2, name: 'อาหาร', type: 'expense' }, { id: 3, name: 'อื่นๆ', type: 'expense' }
         ];
         let accounts = JSON.parse(localStorage.getItem(ST_ACCS)) || [{ id: 1, name: 'เงินสด', type: 'asset', balance: 0 }];
         let transactions = JSON.parse(localStorage.getItem(ST_TXS)) || [];
         let annualBudgets = JSON.parse(localStorage.getItem(ST_BUDGETS)) || {};
+        
         let editingTxId = null;
         let editingAccountId = null;
         let selectedBudgetMonth = new Date().getMonth();
@@ -281,14 +255,155 @@
 
         const MONTHS_LIST = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 
-        // --- SUPABASE ENGINE ---
+        // --- 1. CORE UTILITIES (PRE-DEFINED FOR SCOPE) ---
+
+        function populateSelectors() {
+            const opts = accounts.map(a => `<option value="${a.id}">${a.name} (฿${parseFloat(a.balance).toLocaleString()})</option>`).join('');
+            const fromEl = document.getElementById('from-account');
+            const toEl = document.getElementById('to-account');
+            const catEl = document.getElementById('tx-category');
+            
+            if(fromEl) fromEl.innerHTML = opts;
+            if(toEl) toEl.innerHTML = opts;
+            
+            const currentType = document.getElementById('tx-type')?.value || 'expense';
+            const cats = CATEGORIES.filter(c => c.type === currentType);
+            if(catEl) catEl.innerHTML = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        }
+
+        function updateCalculations() {
+            const netWorthTotal = accounts.reduce((s, a) => s + parseFloat(a.balance), 0);
+            const now = new Date();
+            const curM = now.getMonth();
+            const curY = now.getFullYear();
+            
+            const monthlyTxs = transactions.filter(t => {
+                const d = new Date(t.date);
+                return d.getMonth() === curM && d.getFullYear() === curY;
+            });
+            
+            const inc = monthlyTxs.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount), 0);
+            const exp = monthlyTxs.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0);
+            const actualNet = inc - exp;
+            
+            // Header Stats
+            const nwEl = document.getElementById('display-net-worth');
+            if(nwEl) { nwEl.innerText = `฿ ${netWorthTotal.toLocaleString(undefined, {minimumFractionDigits:2})}`; nwEl.style.color = netWorthTotal < 0 ? '#f43f5e' : '#047857'; }
+            
+            const acEl = document.getElementById('display-cash-flow');
+            if(acEl) { acEl.innerText = `฿ ${actualNet.toLocaleString(undefined, {minimumFractionDigits:2})}`; acEl.style.color = actualNet < 0 ? '#f43f5e' : '#059669'; }
+
+            // Plan Stats (Current Month Plan)
+            const planData = annualBudgets[curM] || {};
+            let pInc = 0; let pExp = 0;
+            CATEGORIES.forEach(c => {
+                const val = parseFloat(planData[c.name] || 0);
+                if(c.type === 'income') pInc += val; else pExp += val;
+            });
+            const planNet = pInc - pExp;
+            const plEl = document.getElementById('display-plan-net');
+            if(plEl) { plEl.innerText = `฿ ${planNet.toLocaleString(undefined, {minimumFractionDigits:2})}`; }
+
+            // Overview Card
+            if(document.getElementById('m-income-val')) document.getElementById('m-income-val').innerText = `฿ ${inc.toLocaleString()}`;
+            if(document.getElementById('m-expense-val')) document.getElementById('m-expense-val').innerText = `฿ ${exp.toLocaleString()}`;
+            const netValEl = document.getElementById('m-net-val');
+            if(netValEl) { netValEl.innerText = `฿ ${actualNet.toLocaleString()}`; netValEl.style.color = actualNet < 0 ? '#f43f5e' : '#059669'; }
+        }
+
+        function renderAccountGrid() {
+            const grid = document.getElementById('account-grid');
+            if(!grid) return;
+            grid.innerHTML = accounts.map(a => `
+                <div class="bg-white p-5 rounded-2xl border flex justify-between items-center shadow-sm">
+                    <div>
+                        <span class="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 tracking-wider">${a.type}</span>
+                        <h4 class="font-bold text-slate-700 mt-1">${a.name}</h4>
+                        <p class="text-xl font-black ${parseFloat(a.balance) < 0 ? 'text-rose-500' : 'text-slate-900'}">฿${parseFloat(a.balance).toLocaleString()}</p>
+                    </div>
+                    <button onclick="openAccountModal(${a.id})" class="p-3 text-slate-300 hover:text-brand-500 transition-colors">✏️</button>
+                </div>
+            `).join('');
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-container');
+            if(!container) return;
+            const q = document.getElementById('filter-search')?.value.toLowerCase() || "";
+            const filtered = transactions.filter(t => t.note.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
+            
+            container.innerHTML = filtered.map(t => `
+                <div class="bg-white p-4 rounded-2xl border shadow-sm flex justify-between items-center active:bg-slate-50 transition-all" onclick="editTx(${t.id})">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold ${t.type==='income'?'bg-emerald-50 text-emerald-500':'bg-rose-50 text-rose-500'}">
+                            ${t.type==='income'?'💰':t.type==='expense'?'💸':'↔️'}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-slate-700">${t.category}</h4>
+                            <p class="text-[10px] text-slate-400 uppercase">${new Date(t.date).toLocaleDateString()} • ${t.from}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-black ${t.type==='income'?'text-emerald-600':'text-rose-500'}">฿${parseFloat(t.amount).toLocaleString()}</p>
+                        <button onclick="event.stopPropagation(); deleteTx(${t.id})" class="text-[8px] font-black text-rose-200 uppercase mt-1">ลบรายการ</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderCategoryList() {
+            const pill = (c) => `<div class="px-3 py-1 bg-white border border-slate-100 rounded-full text-[10px] font-bold flex items-center gap-2 shadow-sm">${c.name}<button onclick="deleteCategory('${c.name}')" class="text-rose-400 font-black">×</button></div>`;
+            const expList = document.getElementById('cat-list-expense');
+            const incList = document.getElementById('cat-list-income');
+            if(expList) expList.innerHTML = CATEGORIES.filter(c => c.type === 'expense').map(pill).join('');
+            if(incList) incList.innerHTML = CATEGORIES.filter(c => c.type === 'income').map(pill).join('');
+        }
+
+        function renderBudgetEditor() {
+            const b = annualBudgets[selectedBudgetMonth] || {};
+            const input = (c) => `
+                <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                    <label class="flex-grow text-[11px] font-bold text-slate-600 uppercase">${c.name}</label>
+                    <div class="relative">
+                        <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">฿</span>
+                        <input type="number" oninput="updateCalculations()" data-cat="${c.name}" value="${b[c.name]||0}" class="budget-input w-28 pl-5 pr-2 py-1 bg-white border rounded-xl text-right text-xs font-black outline-none focus:border-brand-500">
+                    </div>
+                </div>`;
+            const incEd = document.getElementById('budget-editor-income');
+            const expEd = document.getElementById('budget-editor-expense');
+            if(incEd) incEd.innerHTML = `<p class="text-[10px] font-bold text-emerald-500 uppercase mb-4 tracking-widest">💰 เป้าหมายรายรับ</p>` + CATEGORIES.filter(c => c.type === 'income').map(input).join('');
+            if(expEd) expEd.innerHTML = `<p class="text-[10px] font-bold text-rose-500 uppercase mb-4 tracking-widest">💸 เป้าหมายรายจ่าย</p>` + CATEGORIES.filter(c => c.type === 'expense').map(input).join('');
+        }
+
+        function renderMonthSelector() {
+            const sel = document.getElementById('budget-month-selector');
+            if(!sel) return;
+            sel.innerHTML = MONTHS_LIST.map((m, i) => `<button onclick="selectMonth(${i})" class="px-4 py-2 whitespace-nowrap rounded-full border text-[10px] font-bold uppercase transition-all ${i===selectedBudgetMonth?'bg-brand-500 text-white border-brand-500 shadow-lg shadow-brand-500/20':'bg-slate-100 text-slate-400 border-slate-200'}">${m}</button>`).join('');
+            const monthTitle = document.getElementById('editing-month-name');
+            if(monthTitle) monthTitle.innerText = MONTHS_LIST[selectedBudgetMonth];
+        }
+
+        function renderAll() {
+            updateCalculations();
+            renderAccountGrid();
+            renderHistory();
+            renderCategoryList();
+            populateSelectors();
+            localStorage.setItem(ST_ACCS, JSON.stringify(accounts));
+            localStorage.setItem(ST_TXS, JSON.stringify(transactions));
+            localStorage.setItem(ST_CATS, JSON.stringify(CATEGORIES));
+            localStorage.setItem(ST_BUDGETS, JSON.stringify(annualBudgets));
+        }
+
+        // --- 2. SUPABASE & SYNC ---
+
         async function initSupabase() {
             if (typeof supabase === 'undefined') return;
             try {
                 supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 updateSyncUI();
                 if(isSyncActive) await fetchFromCloud();
-            } catch (e) { console.error("Init failed", e); }
+            } catch (e) { console.error("Supabase failed", e); }
         }
 
         async function fetchFromCloud() {
@@ -297,18 +412,12 @@
             try {
                 const { data: accData } = await supabaseClient.from('accounts').select('*');
                 if (accData && accData.length > 0) accounts = accData;
-
                 const { data: txData } = await supabaseClient.from('transactions').select('*').order('date', { ascending: false });
                 if (txData) transactions = txData;
-
                 const { data: catData } = await supabaseClient.from('categories').select('*');
                 if (catData && catData.length > 0) CATEGORIES = catData;
-
                 const { data: budData } = await supabaseClient.from('budgets').select('*');
-                if (budData) {
-                    budData.forEach(row => annualBudgets[row.month_key] = row.data);
-                }
-
+                if (budData) budData.forEach(row => annualBudgets[row.month_key] = row.data);
                 renderAll();
             } catch (e) { console.error("Cloud Error", e); }
             showLoading(false);
@@ -316,66 +425,53 @@
 
         async function pushToCloud(table, data) {
             if (!supabaseClient || !isSyncActive) return;
-            try { await supabaseClient.from(table).upsert(data); } catch (e) { console.error(`Push ${table} error`, e); }
+            try { await supabaseClient.from(table).upsert(data); } catch (e) { console.error(`Push error`, e); }
         }
 
-        async function syncLocalToCloud() {
-            if (!supabaseClient) return;
-            showLoading(true, "กำลังอัปโหลดข้อมูล...");
-            try {
-                for (const acc of accounts) await supabaseClient.from('accounts').upsert(acc);
-                for (const tx of transactions) await supabaseClient.from('transactions').upsert(tx);
-                for (const cat of CATEGORIES) await supabaseClient.from('categories').upsert(cat);
-                for (const [key, val] of Object.entries(annualBudgets)) {
-                    await supabaseClient.from('budgets').upsert({ month_key: key, data: val });
-                }
-                alert("ข้อมูลทั้งหมดซิงค์ขึ้น Cloud สำเร็จ!");
-            } catch (e) { console.error(e); }
-            showLoading(false);
+        async function toggleSyncMode() {
+            isSyncActive = !isSyncActive;
+            localStorage.setItem('ws_sync_active', isSyncActive);
+            updateSyncUI();
+            if (isSyncActive) await fetchFromCloud();
         }
 
-        // --- CORE CALCULATIONS ---
-        function updateCalculations() {
-            const netTotal = accounts.reduce((s, a) => s + parseFloat(a.balance), 0);
-            const now = new Date();
-            const monthlyTxs = transactions.filter(t => {
-                const d = new Date(t.date);
-                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-            });
-            const inc = monthlyTxs.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount), 0);
-            const exp = monthlyTxs.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0);
-            
-            document.getElementById('display-net-worth').innerText = `฿ ${netTotal.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-            document.getElementById('display-cash-flow').innerText = `฿ ${(inc - exp).toLocaleString(undefined, {minimumFractionDigits:2})}`;
-            document.getElementById('m-income-val').innerText = `฿ ${inc.toLocaleString()}`;
-            document.getElementById('m-expense-val').innerText = `฿ ${exp.toLocaleString()}`;
-            const netEl = document.getElementById('m-net-val');
-            netEl.innerText = `฿ ${(inc-exp).toLocaleString()}`;
-            netEl.style.color = (inc-exp) < 0 ? '#f43f5e' : '#059669';
-            document.getElementById('display-net-worth').style.color = netTotal < 0 ? '#f43f5e' : '#047857';
-
-            // Calculate Target Summary for current selected budget month
-            const budData = annualBudgets[selectedBudgetMonth] || {};
-            let tInc = 0; let tExp = 0;
-            CATEGORIES.forEach(c => {
-                const val = parseFloat(budData[c.name] || 0);
-                if(c.type === 'income') tInc += val; else tExp += val;
-            });
-            document.getElementById('target-inc-val').innerText = `฿ ${tInc.toLocaleString()}`;
-            document.getElementById('target-exp-val').innerText = `฿ ${tExp.toLocaleString()}`;
-            const tNet = tInc - tExp;
-            document.getElementById('target-net-val').innerText = `฿ ${tNet.toLocaleString()}`;
-            document.getElementById('target-net-val').style.color = tNet < 0 ? '#fda4af' : '#bef264';
+        function updateSyncUI() {
+            const btn = document.getElementById('sync-toggle-btn');
+            const icon = document.getElementById('sync-icon');
+            const dot = document.getElementById('sync-status');
+            if(!btn) return;
+            if (isSyncActive) {
+                btn.classList.add('sync-btn-online'); btn.classList.remove('sync-btn-offline');
+                icon.innerText = "☁️";
+                if(dot) dot.classList.replace('bg-slate-200', 'bg-brand-500');
+            } else {
+                btn.classList.add('sync-btn-offline'); btn.classList.remove('sync-btn-online');
+                icon.innerText = "💤";
+                if(dot) dot.classList.replace('bg-brand-500', 'bg-slate-200');
+            }
         }
 
-        // --- HANDLERS ---
+        // --- 3. BUSINESS LOGIC HANDLERS ---
+
+        function revertBalance(id) {
+            const tx = transactions.find(t => t.id === id);
+            if (!tx) return;
+            const fAcc = accounts.find(a => a.name === tx.from);
+            const tAcc = tx.to ? accounts.find(a => a.name === tx.to) : null;
+            if (tx.type === 'expense') { if(fAcc) fAcc.balance += parseFloat(tx.amount); }
+            else if (tx.type === 'income') { if(fAcc) fAcc.balance -= parseFloat(tx.amount); }
+            else { if(fAcc) fAcc.balance += parseFloat(tx.amount); if(tAcc) tAcc.balance -= parseFloat(tx.amount); }
+        }
+
         async function handleTransaction(event) {
             event.preventDefault();
             if (editingTxId) revertBalance(editingTxId);
+
             const type = document.getElementById('tx-type').value;
             const amount = parseFloat(document.getElementById('tx-amount').value);
             const fromId = parseInt(document.getElementById('from-account').value);
             const fromAcc = accounts.find(a => a.id === fromId);
+
             if (type !== 'income' && amount > fromAcc.balance && fromAcc.type !== 'debt') return alert("ยอดเงินไม่พอ!");
 
             let newTx = {
@@ -397,8 +493,12 @@
                 fromAcc.balance += amount;
                 if(isSyncActive) await pushToCloud('accounts', fromAcc);
             }
-            if (editingTxId) { const idx = transactions.findIndex(t => t.id === editingTxId); transactions[idx] = newTx; }
-            else transactions.unshift(newTx);
+
+            if (editingTxId) {
+                const idx = transactions.findIndex(t => t.id === editingTxId);
+                transactions[idx] = newTx;
+            } else transactions.unshift(newTx);
+
             if(isSyncActive) await pushToCloud('transactions', newTx);
             resetForm(); renderAll();
         }
@@ -426,9 +526,7 @@
             const updated = {};
             inputs.forEach(i => updated[i.dataset.cat] = parseFloat(i.value) || 0);
             annualBudgets[selectedBudgetMonth] = updated;
-            if(isSyncActive) {
-                await supabaseClient.from('budgets').upsert({ month_key: selectedBudgetMonth.toString(), data: updated });
-            }
+            if(isSyncActive) await supabaseClient.from('budgets').upsert({ month_key: selectedBudgetMonth.toString(), data: updated });
             renderAll(); alert('บันทึกงบประมาณสำเร็จ');
         }
 
@@ -440,7 +538,7 @@
             CATEGORIES.push(newCat);
             if(isSyncActive) await pushToCloud('categories', newCat);
             document.getElementById('new-cat-name').value = '';
-            ensureBudgetIntegrity(); renderAll();
+            renderAll();
         }
 
         async function deleteCategory(name) {
@@ -457,174 +555,59 @@
             if(annualBudgets[prev]) {
                 annualBudgets[selectedBudgetMonth] = { ...annualBudgets[prev] };
                 renderBudgetEditor(); updateCalculations();
-            } else alert("ยังไม่มีข้อมูลของเดือนก่อนหน้า");
+            } else alert("ยังไม่มีข้อมูลเดือนก่อนหน้า");
         }
 
-        // --- RENDER HELPERS ---
-        function renderAccountGrid() {
-            document.getElementById('account-grid').innerHTML = accounts.map(a => `
-                <div class="bg-white p-5 rounded-2xl border flex justify-between items-center shadow-sm">
-                    <div>
-                        <span class="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 tracking-wider">${a.type}</span>
-                        <h4 class="font-bold text-slate-700 mt-1">${a.name}</h4>
-                        <p class="text-xl font-black ${a.balance < 0 ? 'text-rose-500' : 'text-slate-900'}">฿${parseFloat(a.balance).toLocaleString()}</p>
-                    </div>
-                    <button onclick="openAccountModal(${a.id})" class="p-3 text-slate-300 transition-colors hover:text-brand-500">✏️</button>
-                </div>
-            `).join('');
+        function editTx(id) {
+            const tx = transactions.find(t => t.id === id);
+            if(!tx) return;
+            editingTxId = id;
+            switchTab('overview');
+            document.getElementById('form-container').classList.add('edit-mode');
+            document.getElementById('edit-indicator').classList.remove('hidden');
+            setTxType(tx.type);
+            document.getElementById('tx-amount').value = tx.amount;
+            document.getElementById('tx-note').value = tx.note;
+            document.getElementById('tx-date').value = new Date(tx.date).toISOString().split('T')[0];
+            document.getElementById('tx-category').value = tx.category;
+            const fAcc = accounts.find(a => a.name === tx.from);
+            if(fAcc) document.getElementById('from-account').value = fAcc.id;
+            if(tx.to) {
+                const tAcc = accounts.find(a => a.name === tx.to);
+                if(tAcc) document.getElementById('to-account').value = tAcc.id;
+            }
+            document.getElementById('submit-btn').innerText = "อัปเดตรายการ";
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
         }
 
-        function renderHistory() {
-            const container = document.getElementById('history-container');
-            const q = document.getElementById('filter-search').value.toLowerCase();
-            const filtered = transactions.filter(t => t.note.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
-            container.innerHTML = filtered.map(t => `
-                <div class="bg-white p-4 rounded-2xl border shadow-sm flex justify-between items-center active:bg-slate-50 transition-all" onclick="editTx(${t.id})">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold ${t.type==='income'?'bg-emerald-50 text-emerald-500':'bg-rose-50 text-rose-500'}">
-                            ${t.type==='income'?'💰':t.type==='expense'?'💸':'↔️'}
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-sm text-slate-700">${t.category}</h4>
-                            <p class="text-[10px] text-slate-400 uppercase">${t.date.split('T')[0]} • ${t.from}</p>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <p class="font-black ${t.type==='income'?'text-emerald-600':'text-rose-500'}">฿${parseFloat(t.amount).toLocaleString()}</p>
-                        <button onclick="event.stopPropagation(); deleteTx(${t.id})" class="text-[8px] font-black text-rose-200 uppercase mt-1">ลบรายการ</button>
-                    </div>
-                </div>
-            `).join('');
+        async function deleteTx(id) {
+            if(confirm('ลบรายการ?')) {
+                revertBalance(id);
+                transactions = transactions.filter(t => t.id !== id);
+                if(isSyncActive) await supabaseClient.from('transactions').delete().eq('id', id);
+                renderAll();
+            }
         }
 
-        function renderCategoryList() {
-            const pill = (c) => `<div class="px-3 py-1 bg-white border border-slate-100 rounded-full text-[10px] font-bold flex items-center gap-2 shadow-sm">${c.name}<button onclick="deleteCategory('${c.name}')" class="text-rose-400 font-black">×</button></div>`;
-            document.getElementById('cat-list-expense').innerHTML = CATEGORIES.filter(c => c.type === 'expense').map(pill).join('');
-            document.getElementById('cat-list-income').innerHTML = CATEGORIES.filter(c => c.type === 'income').map(pill).join('');
-        }
-
-        function renderBudgetEditor() {
-            const b = annualBudgets[selectedBudgetMonth] || {};
-            const input = (c) => `
-                <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                    <label class="flex-grow text-[11px] font-bold text-slate-600 uppercase tracking-tight">${c.name}</label>
-                    <div class="relative">
-                        <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">฿</span>
-                        <input type="number" oninput="updateCalculations()" data-cat="${c.name}" value="${b[c.name]||0}" class="budget-input w-28 pl-5 pr-2 py-1 bg-white border rounded-xl text-right text-xs font-black outline-none focus:border-brand-500">
-                    </div>
-                </div>`;
-            document.getElementById('budget-editor-income').innerHTML = `<p class="text-[10px] font-bold text-emerald-500 uppercase mb-4 tracking-widest">💰 ประมาณการรายรับ</p>` + CATEGORIES.filter(c => c.type === 'income').map(input).join('');
-            document.getElementById('budget-editor-expense').innerHTML = `<p class="text-[10px] font-bold text-rose-500 uppercase mb-4 tracking-widest">💸 ประมาณการรายจ่าย</p>` + CATEGORIES.filter(c => c.type === 'expense').map(input).join('');
-        }
-
-        function renderMonthSelector() {
-            const sel = document.getElementById('budget-month-selector');
-            if(!sel) return;
-            sel.innerHTML = MONTHS_LIST.map((m, i) => `<button onclick="selectMonth(${i})" class="px-4 py-2 whitespace-nowrap rounded-full border text-[10px] font-bold uppercase transition-all ${i===selectedBudgetMonth?'bg-brand-500 text-white border-brand-500 shadow-lg shadow-brand-500/20':'bg-white/10 text-white/50 border-white/10'}">${m}</button>`).join('');
-            document.getElementById('editing-month-name').innerText = MONTHS_LIST[selectedBudgetMonth];
-        }
-
-        function selectMonth(i) { selectedBudgetMonth = i; renderMonthSelector(); renderBudgetEditor(); updateCalculations(); }
-
-        // --- UI UTILS ---
-        function resetForm() {
-            editingTxId = null;
-            document.querySelector('form').reset();
-            document.getElementById('form-container').classList.remove('edit-mode');
-            document.getElementById('edit-indicator').classList.add('hidden');
-            document.getElementById('submit-btn').innerText = "บันทึกรายการ";
-            document.getElementById('cancel-edit-btn').classList.add('hidden');
-            setTxType('expense');
-            const elDate = document.getElementById('tx-date');
-            if(elDate) elDate.value = new Date().toISOString().split('T')[0];
-        }
-
-        function setTxType(type) {
-            document.getElementById('tx-type').value = type;
-            ['income', 'expense', 'transfer'].forEach(t => {
-                const btn = document.getElementById(`btn-type-${t}`);
-                if(btn) btn.classList.toggle('bg-white', t === type);
-            });
-            document.getElementById('to-account-div')?.classList.toggle('hidden', type !== 'transfer');
-            populateSelectors();
-        }
+        // --- 4. NAVIGATION & UI ---
 
         function switchTab(tab) {
             ['overview', 'accounts', 'budget', 'history'].forEach(v => {
                 const el = document.getElementById(`view-${v}`);
-                if(el) el.classList.add('hidden');
                 const nav = document.getElementById(`nav-${v}`);
+                if(el) el.classList.add('hidden');
                 if(nav) nav.classList.remove('active');
             });
             const target = document.getElementById(`view-${tab}`);
-            if(target) target.classList.remove('hidden');
             const targetNav = document.getElementById(`nav-${tab}`);
+            if(target) target.classList.remove('hidden');
             if(targetNav) targetNav.classList.add('active');
             if(tab === 'overview' || tab === 'accounts') renderCharts();
             if(tab === 'budget') { renderBudgetEditor(); renderMonthSelector(); }
             window.scrollTo(0, 0);
         }
 
-        function renderCharts() {
-            const canvas = document.getElementById('assetChart');
-            if(!canvas) return;
-            if(assetChart) assetChart.destroy();
-            assetChart = new Chart(canvas.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: accounts.map(a => a.name),
-                    datasets: [{ data: accounts.map(a => Math.abs(parseFloat(a.balance))), backgroundColor: accounts.map((_,i) => `hsl(${150+(i*45)}, 60%, 50%)`), borderWidth: 4, borderColor: '#ffffff' }]
-                },
-                options: { maintainAspectRatio: false, cutout: '80%', plugins: { legend: { display: false } } }
-            });
-        }
-
-        function populateSelectors() {
-            const opts = accounts.map(a => `<option value="${a.id}">${a.name} (฿${parseFloat(a.balance).toLocaleString()})</option>`).join('');
-            document.getElementById('from-account').innerHTML = opts;
-            const toAcc = document.getElementById('to-account');
-            if(toAcc) toAcc.innerHTML = opts;
-            const cats = CATEGORIES.filter(c => c.type === document.getElementById('tx-type').value);
-            document.getElementById('tx-category').innerHTML = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-        }
-
-        function ensureBudgetIntegrity() {
-            for(let i=0; i<12; i++) {
-                if (!annualBudgets[i]) annualBudgets[i] = {};
-                CATEGORIES.forEach(cat => { if (annualBudgets[i][cat.name] === undefined) annualBudgets[i][cat.name] = 0; });
-            }
-        }
-
-        async function toggleSyncMode() {
-            isSyncActive = !isSyncActive;
-            localStorage.setItem('ws_sync_active', isSyncActive);
-            updateSyncUI();
-            if (isSyncActive) await fetchFromCloud();
-        }
-
-        function updateSyncUI() {
-            const btn = document.getElementById('sync-toggle-btn');
-            const icon = document.getElementById('sync-icon');
-            const dot = document.getElementById('sync-status');
-            if(!btn) return;
-            if (isSyncActive) {
-                btn.classList.add('sync-btn-online'); btn.classList.remove('sync-btn-offline');
-                icon.innerText = "☁️";
-                if(dot) dot.classList.replace('bg-slate-200', 'bg-brand-500');
-            } else {
-                btn.classList.add('sync-btn-offline'); btn.classList.remove('sync-btn-online');
-                icon.innerText = "💤";
-                if(dot) dot.classList.replace('bg-brand-500', 'bg-slate-200');
-            }
-        }
-
-        function renderAll() {
-            updateCalculations(); renderAccountGrid(); renderHistory(); renderCategoryList(); populateSelectors();
-            localStorage.setItem(ST_ACCS, JSON.stringify(accounts));
-            localStorage.setItem(ST_TXS, JSON.stringify(transactions));
-            localStorage.setItem(ST_CATS, JSON.stringify(CATEGORIES));
-            localStorage.setItem(ST_BUDGETS, JSON.stringify(annualBudgets));
-        }
+        function selectMonth(i) { selectedBudgetMonth = i; renderMonthSelector(); renderBudgetEditor(); updateCalculations(); }
 
         function openAccountModal(id = null) {
             editingAccountId = id;
@@ -643,6 +626,62 @@
 
         function closeAccountModal() { document.getElementById('account-modal').classList.add('hidden'); }
         function showLoading(show, txt) { document.getElementById('loading-screen').classList.toggle('hidden', !show); if(txt) document.getElementById('loading-text').innerText = txt; }
+        
+        function resetForm() {
+            editingTxId = null;
+            document.querySelector('form').reset();
+            document.getElementById('form-container').classList.remove('edit-mode');
+            document.getElementById('edit-indicator').classList.add('hidden');
+            document.getElementById('submit-btn').innerText = "บันทึกรายการ";
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            setTxType('expense');
+            const elDate = document.getElementById('tx-date');
+            if(elDate) elDate.value = new Date().toISOString().split('T')[0];
+        }
+
+        function setTxType(type) {
+            const typeInp = document.getElementById('tx-type');
+            if(typeInp) typeInp.value = type;
+            ['income', 'expense', 'transfer'].forEach(t => {
+                const btn = document.getElementById(`btn-type-${t}`);
+                if(btn) btn.classList.toggle('bg-white', t === type);
+            });
+            const toAccDiv = document.getElementById('to-account-div');
+            if(toAccDiv) toAccDiv.classList.toggle('hidden', type !== 'transfer');
+            populateSelectors();
+        }
+
+        function renderCharts() {
+            const canvas = document.getElementById('assetChart');
+            if(!canvas) return;
+            if(assetChart) assetChart.destroy();
+            assetChart = new Chart(canvas.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: accounts.map(a => a.name),
+                    datasets: [{ data: accounts.map(a => Math.abs(parseFloat(a.balance))), backgroundColor: accounts.map((_,i) => `hsl(${150+(i*45)}, 60%, 50%)`), borderWidth: 4, borderColor: '#ffffff' }]
+                },
+                options: { maintainAspectRatio: false, cutout: '80%', plugins: { legend: { display: false } } }
+            });
+        }
+
+        function ensureBudgetIntegrity() {
+            for(let i=0; i<12; i++) {
+                if (!annualBudgets[i]) annualBudgets[i] = {};
+                CATEGORIES.forEach(cat => { if (annualBudgets[i][cat.name] === undefined) annualBudgets[i][cat.name] = 0; });
+            }
+        }
+
+        function syncLocalToCloud() {
+            if (!supabaseClient) return alert("โปรดรอการเชื่อมต่อ...");
+            showLoading(true, "Force uploading...");
+            Promise.all([
+                ...accounts.map(acc => pushToCloud('accounts', acc)),
+                ...transactions.map(tx => pushToCloud('transactions', tx))
+            ]).then(() => {
+                showLoading(false); alert("ซิงค์สำเร็จ!");
+            });
+        }
 
         function init() {
             const elDate = document.getElementById('tx-date');
@@ -656,3 +695,4 @@
     </script>
 </body>
 </html>
+ฃ
