@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WalletSync AI Pro</title>
+    <!-- External Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -30,8 +31,11 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .fade-in { animation: slideUp 0.3s ease-out forwards; }
         .custom-scroll::-webkit-scrollbar { display: none; }
+        input[type="date"], select, input[type="number"] { font-size: 16px !important; }
         .edit-mode { border: 2px solid #fbbf24 !important; background-color: #fffbeb !important; }
         .loading-overlay { background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); }
+        .sync-btn-online { background-color: #10b981 !apply; color: white !apply; border-color: #059669 !apply; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+        .sync-btn-offline { background-color: #f1f5f9 !apply; color: #94a3b8 !apply; border-color: #e2e8f0 !apply; }
         .filter-chip { @apply px-3 py-1.5 rounded-xl border text-[10px] font-bold uppercase transition-all whitespace-nowrap; }
         .filter-chip.active { @apply bg-brand-600 text-white border-brand-600 shadow-md; }
         .filter-chip.inactive { @apply bg-white text-slate-400 border-slate-100; }
@@ -39,17 +43,19 @@
 </head>
 <body class="text-slate-800 pb-24">
 
+    <!-- Loading Overlay -->
     <div id="loading-screen" class="hidden fixed inset-0 z-[100] flex items-center justify-center loading-overlay">
         <div class="text-center p-6 bg-white rounded-3xl shadow-2xl">
             <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-            <p class="text-sm font-bold text-brand-700" id="loading-text">กำลังจัดการข้อมูล...</p>
+            <p class="text-sm font-bold text-brand-700" id="loading-text">กำลังซิงค์ข้อมูลกับ Cloud...</p>
         </div>
     </div>
 
+    <!-- Header -->
     <header class="bg-white border-b border-slate-100 sticky top-0 z-40 px-5 py-4 flex justify-between items-center shadow-sm">
         <div class="flex items-center gap-4" onclick="switchTab('overview')">
             <div class="flex items-center gap-2">
-                <div class="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg shadow-brand-500/30">฿</div>
+                <div class="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg">฿</div>
                 <div>
                     <h1 class="text-[10px] font-bold text-slate-400 uppercase leading-none">Net Worth</h1>
                     <span class="text-lg font-black text-brand-700" id="display-net-worth">฿ 0.00</span>
@@ -62,7 +68,7 @@
         </div>
         
         <div class="flex items-center gap-2">
-            <div id="sync-status" class="w-2.5 h-2.5 rounded-full bg-slate-200" title="Status Indicator"></div>
+            <div id="sync-status" class="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
             <button id="sync-toggle-btn" onclick="toggleSyncMode()" class="w-12 h-12 rounded-2xl flex items-center justify-center border transition-all active:scale-90">
                 <span id="sync-icon" class="text-xl">☁️</span>
             </button>
@@ -71,8 +77,9 @@
 
     <main class="max-w-md mx-auto p-4">
         
+        <!-- VIEW: OVERVIEW -->
         <div id="view-overview" class="fade-in space-y-6">
-            <div class="bg-white p-5 rounded-xl3 border border-slate-200 shadow-sm">
+            <div class="bg-white p-5 rounded-xl3 border border-slate-200 shadow-sm overflow-hidden">
                 <div class="flex justify-between items-center mb-4">
                     <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">กระแสเงินสดเดือนนี้</h4>
                     <div id="cloud-indicator" class="text-[8px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 uppercase">Offline</div>
@@ -93,6 +100,7 @@
                 </div>
             </div>
 
+            <!-- Form Card -->
             <div id="form-container" class="bg-white p-5 rounded-xl3 border border-slate-200 shadow-sm">
                 <div class="flex justify-between items-center mb-4">
                     <h3 id="form-title" class="font-bold text-slate-800 text-lg">บันทึกรายการ</h3>
@@ -136,53 +144,44 @@
             </div>
         </div>
 
+        <!-- VIEW: HISTORY -->
         <div id="view-history" class="hidden fade-in space-y-4">
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
                 <input type="text" id="filter-search" placeholder="ค้นหา..." class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none" oninput="renderHistory()">
             </div>
-
-            <div class="bg-slate-900 rounded-2xl p-4 overflow-hidden border border-slate-700">
+            
+            <div class="bg-slate-900 rounded-2xl p-4 border border-slate-700">
                 <div class="flex justify-between items-center mb-3">
-                    <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">System Cloud Debug</h5>
-                    <button onclick="testConnection()" class="text-[9px] bg-brand-600 text-white px-2 py-1 rounded-md font-bold">Check Connection</button>
+                    <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cloud Sync Management</h5>
+                    <button onclick="syncLocalToCloud()" class="text-[9px] bg-brand-600 text-white px-2 py-1 rounded-md font-bold">Sync All to Cloud</button>
                 </div>
                 <div id="debug-logs" class="text-[9px] font-mono text-emerald-400 max-h-40 overflow-y-auto leading-relaxed">
-                    > System standby...
+                    > ระบบพร้อมซิงค์ข้อมูล...
                 </div>
             </div>
 
             <div id="history-container" class="space-y-3"></div>
         </div>
 
+        <!-- VIEW: ACCOUNTS -->
         <div id="view-accounts" class="hidden fade-in space-y-4">
             <div class="flex justify-between items-center px-2">
                 <h3 class="text-xl font-black text-slate-800">จัดการบัญชี</h3>
                 <button onclick="openAccountModal()" class="w-12 h-12 bg-brand-600 text-white rounded-2xl shadow-lg">+</button>
             </div>
-            <div class="bg-white p-5 rounded-xl3 shadow-sm border border-slate-100">
-                <div class="chart-container"><canvas id="assetChart"></canvas></div>
-            </div>
             <div id="account-grid" class="space-y-4"></div>
         </div>
         
-        <div id="view-budget" class="hidden fade-in space-y-4">
-            <div class="bg-white p-5 rounded-xl3 shadow-sm border border-slate-200">
-                <div id="cat-list-expense" class="flex flex-wrap gap-2 mb-4"></div>
-                <div class="flex gap-2">
-                    <input type="text" id="new-cat-name" placeholder="เพิ่มหมวดหมู่..." class="flex-1 p-2 border rounded-xl text-sm">
-                    <button onclick="addCategory()" class="px-4 bg-brand-600 text-white rounded-xl font-bold">+</button>
-                </div>
-            </div>
-        </div>
     </main>
 
+    <!-- Bottom Nav -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 flex justify-around items-center h-20 bottom-nav px-2 z-50">
         <button onclick="switchTab('overview')" id="nav-overview" class="nav-item active flex flex-col items-center gap-1"><div class="icon-bg p-2 text-xl">🏠</div><span class="text-[10px] font-bold uppercase">หน้าแรก</span></button>
         <button onclick="switchTab('accounts')" id="nav-accounts" class="nav-item flex flex-col items-center gap-1"><div class="icon-bg p-2 text-xl">💳</div><span class="text-[10px] font-bold uppercase">บัญชี</span></button>
-        <button onclick="switchTab('budget')" id="nav-budget" class="nav-item flex flex-col items-center gap-1"><div class="icon-bg p-2 text-xl">📊</div><span class="text-[10px] font-bold uppercase">แผนงาน</span></button>
         <button onclick="switchTab('history')" id="nav-history" class="nav-item flex flex-col items-center gap-1"><div class="icon-bg p-2 text-xl">🕒</div><span class="text-[10px] font-bold uppercase">ประวัติ</span></button>
     </nav>
 
+    <!-- Account Modal -->
     <div id="account-modal" class="hidden fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-6 backdrop-blur-sm">
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl">
             <h3 class="text-xl font-black mb-6 text-center">จัดการบัญชี</h3>
@@ -193,7 +192,7 @@
                     <option value="investment">การลงทุน</option>
                     <option value="debt">หนี้สิน (ยืมเงิน)</option>
                 </select>
-                <input type="number" id="new-acc-balance" placeholder="ยอดเริ่มต้น..." class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
+                <input type="number" id="new-acc-balance" placeholder="ยอดเงินปัจจุบัน..." class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
             </div>
             <div class="flex gap-2 mt-8">
                 <button onclick="saveAccount()" class="flex-1 py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-lg">บันทึก</button>
@@ -203,24 +202,23 @@
     </div>
 
     <script>
-        // --- CONFIG (FIXED URL) ---
+        // --- ⚙️ CONFIG ---
         const SUPABASE_URL = "https://xyotqopwkcxblapoaiae.supabase.co"; 
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5b3Rxb3B3a2N4YmxhcG9haWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MDI0ODMsImV4cCI6MjA5MTQ3ODQ4M30.qNBaRDz9WGAXxX0tUcBLoMg6yA4Jz4EypTT_TJuZzkk";
         
-        const MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
         let supabaseClient = null;
         let isSyncActive = localStorage.getItem('ws_sync_active') !== 'false';
-        let assetChart = null;
+        const STORAGE_VER = "v40"; // Force refresh for new multi-table logic
 
         // Models
-        let CATEGORIES = JSON.parse(localStorage.getItem('ws_cats_v30')) || [{ name: 'อาหาร', type: 'expense' }, { name: 'เงินเดือน', type: 'income' }];
-        let accounts = JSON.parse(localStorage.getItem('ws_accs_v30')) || [{ id: 1, name: 'เงินสด', type: 'asset', balance: 0 }];
-        let transactions = JSON.parse(localStorage.getItem('ws_txs_v30')) || [];
-        let annualBudgets = JSON.parse(localStorage.getItem('ws_budgets_v30')) || {};
+        let CATEGORIES = JSON.parse(localStorage.getItem(`ws_cats_${STORAGE_VER}`)) || [{ name: 'เงินเดือน', type: 'income' }, { name: 'อาหาร', type: 'expense' }];
+        let accounts = JSON.parse(localStorage.getItem(`ws_accs_${STORAGE_VER}`)) || [{ id: 1, name: 'เงินสด', type: 'asset', balance: 0 }];
+        let transactions = JSON.parse(localStorage.getItem(`ws_txs_${STORAGE_VER}`)) || [];
         let editingTxId = null;
-        let histFilters = { type: 'all' };
+        let editingAccountId = null;
+        let assetChart = null;
 
-        // --- GLOBAL UTILITIES ---
+        // --- CORE LOGIC ---
         function logDebug(msg, isError = false) {
             const logs = document.getElementById('debug-logs');
             if(!logs) return;
@@ -228,77 +226,226 @@
             logs.innerHTML = `<div class="${isError?'text-rose-400':'text-emerald-400'} mb-1"># [${time}] ${msg}</div>` + logs.innerHTML;
         }
 
-        function resetForm() {
-            editingTxId = null;
-            const form = document.querySelector('form');
-            if(form) form.reset();
-            document.getElementById('form-container').classList.remove('edit-mode');
-            document.getElementById('edit-indicator').classList.add('hidden');
-            document.getElementById('submit-btn').innerText = "บันทึกรายการ";
-            document.getElementById('cancel-edit-btn').classList.add('hidden');
-            setDefaultDate(); setTxType('expense');
-        }
-
-        function setDefaultDate() { const el = document.getElementById('tx-date'); if(el) el.value = new Date().toISOString().split('T')[0]; }
-
-        function ensureBudgetIntegrity() {
-            for(let i=0; i<12; i++) {
-                if (!annualBudgets[i]) annualBudgets[i] = {};
-                CATEGORIES.forEach(cat => { if (annualBudgets[i][cat.name] === undefined) annualBudgets[i][cat.name] = 0; });
-            }
-        }
-
-        // --- SUPABASE ENGINE ---
         async function initSupabase() {
-            if (typeof supabase === 'undefined') return logDebug("Supabase Lib NOT LOADED", true);
+            if (typeof supabase === 'undefined') return;
             try {
                 supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                logDebug("Supabase Initialized");
                 updateSyncUI();
                 if(isSyncActive) await fetchFromCloud();
             } catch (e) { logDebug("Init Error: " + e.message, true); }
         }
 
-        async function testConnection() {
-            logDebug("Testing database connection...");
-            try {
-                const { data, error } = await supabaseClient.from('transactions').select('id').limit(1);
-                if (error) throw error;
-                logDebug("✅ Connection OK - Read Success");
-                alert("เชื่อมต่อฐานข้อมูลได้ปกติครับ!");
-            } catch (e) { 
-                logDebug("❌ Connection Failed: " + e.message, true); 
-                alert("เกิดข้อผิดพลาด: " + e.message);
-            }
-        }
-
         async function fetchFromCloud() {
             if (!supabaseClient || !isSyncActive) return;
-            showLoading(true, "ซิงค์ข้อมูลจาก Cloud...");
+            showLoading(true, "ซิงค์ข้อมูล Cloud...");
             try {
-                const { data, error } = await supabaseClient.from('transactions').select('*').order('date', { ascending: false });
-                if (error) throw error;
-                if (data) {
-                    transactions = data;
-                    logDebug(`Fetched ${data.length} records`);
-                    renderAll();
-                }
+                // Fetch Accounts first
+                const { data: accData, error: accErr } = await supabaseClient.from('accounts').select('*');
+                if (!accErr && accData && accData.length > 0) accounts = accData;
+
+                // Fetch Transactions
+                const { data: txData, error: txErr } = await supabaseClient.from('transactions').select('*').order('date', { ascending: false });
+                if (!txErr && txData) transactions = txData;
+
+                logDebug(`Synced: ${accounts.length} Accounts, ${transactions.length} Records`);
+                renderAll();
             } catch (e) { logDebug("Fetch Error: " + e.message, true); }
             showLoading(false);
         }
 
-        async function pushToCloud(tx) {
+        async function syncLocalToCloud() {
+            if (!supabaseClient) return;
+            showLoading(true, "Force uploading...");
+            try {
+                // Upload Accounts
+                for (const acc of accounts) await supabaseClient.from('accounts').upsert(acc);
+                // Upload Transactions
+                for (const tx of transactions) await supabaseClient.from('transactions').upsert(tx);
+                logDebug("All data pushed to Cloud");
+                alert("ส่งข้อมูลทั้งหมดขึ้น Cloud สำเร็จ!");
+            } catch (e) { logDebug("Upload error", true); }
+            showLoading(false);
+        }
+
+        async function pushToCloud(table, data) {
             if (!supabaseClient || !isSyncActive) return;
             try {
-                const { error } = await supabaseClient.from('transactions').upsert(tx);
-                if (error) {
-                    logDebug("Push Error: " + error.message, true);
-                    alert("บันทึกออนไลน์ไม่สำเร็จ: " + error.message);
-                } else {
-                    logDebug(`Synced OK`);
-                }
-            } catch (e) { logDebug("Push Exception: " + e.message, true); }
+                await supabaseClient.from(table).upsert(data);
+                logDebug(`Cloud Updated: ${table}`);
+            } catch (e) { logDebug(`Push ${table} error`, true); }
         }
+
+        function updateCalculations() {
+            const netTotal = accounts.reduce((s, a) => s + a.balance, 0);
+            const now = new Date();
+            const monthlyTxs = transactions.filter(t => new Date(t.date).getMonth() === now.getMonth());
+            const inc = monthlyTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+            const exp = monthlyTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+            
+            document.getElementById('display-net-worth').innerText = `฿ ${netTotal.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+            document.getElementById('display-cash-flow').innerText = `฿ ${(inc-exp).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+            document.getElementById('m-income-val').innerText = `฿ ${inc.toLocaleString()}`;
+            document.getElementById('m-expense-val').innerText = `฿ ${exp.toLocaleString()}`;
+            const netEl = document.getElementById('m-net-val');
+            netEl.innerText = `฿ ${(inc-exp).toLocaleString()}`;
+            netEl.style.color = (inc-exp) < 0 ? '#f43f5e' : '#059669';
+        }
+
+        // --- HANDLERS ---
+        async function handleTransaction(event) {
+            event.preventDefault();
+            if (editingTxId) revertBalance(editingTxId);
+
+            const type = document.getElementById('tx-type').value;
+            const amount = parseFloat(document.getElementById('tx-amount').value);
+            const fromId = parseInt(document.getElementById('from-account').value);
+            const fromAcc = accounts.find(a => a.id === fromId);
+
+            if (type !== 'income' && amount > fromAcc.balance && fromAcc.type !== 'debt') return alert("ยอดเงินไม่พอ!");
+
+            let newTx = {
+                id: editingTxId || Math.floor(Math.random() * 100000000),
+                type, amount, from: fromAcc.name,
+                category: type === 'transfer' ? 'โอนเงิน' : document.getElementById('tx-category').value,
+                note: document.getElementById('tx-note').value,
+                date: document.getElementById('tx-date').value || new Date().toISOString()
+            };
+
+            if (type === 'transfer') {
+                const toAcc = accounts.find(a => a.id === parseInt(document.getElementById('to-account').value));
+                fromAcc.balance -= amount; toAcc.balance += amount; newTx.to = toAcc.name;
+                if(isSyncActive) { await pushToCloud('accounts', fromAcc); await pushToCloud('accounts', toAcc); }
+            } else if (type === 'expense') {
+                fromAcc.balance -= amount;
+                if(isSyncActive) await pushToCloud('accounts', fromAcc);
+            } else {
+                fromAcc.balance += amount;
+                if(isSyncActive) await pushToCloud('accounts', fromAcc);
+            }
+
+            if (editingTxId) {
+                const idx = transactions.findIndex(t => t.id === editingTxId);
+                transactions[idx] = newTx;
+            } else transactions.unshift(newTx);
+
+            if(isSyncActive) await pushToCloud('transactions', newTx);
+            resetForm(); renderAll();
+        }
+
+        async function saveAccount() {
+            const name = document.getElementById('new-acc-name').value;
+            const type = document.getElementById('new-acc-type').value;
+            const balance = parseFloat(document.getElementById('new-acc-balance').value) || 0;
+            if(!name) return;
+            
+            let acc;
+            if (editingAccountId) {
+                const idx = accounts.findIndex(a => a.id === editingAccountId);
+                accounts[idx] = { ...accounts[idx], name, type, balance };
+                acc = accounts[idx];
+            } else {
+                acc = { id: Date.now(), name, type, balance };
+                accounts.push(acc);
+            }
+            
+            if(isSyncActive) await pushToCloud('accounts', acc);
+            closeAccountModal(); renderAll();
+        }
+
+        // --- UI UTILS ---
+        function resetForm() {
+            editingTxId = null;
+            document.querySelector('form').reset();
+            document.getElementById('form-container').classList.remove('edit-mode');
+            document.getElementById('edit-indicator').classList.add('hidden');
+            document.getElementById('submit-btn').innerText = "บันทึกรายการ";
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            setTxType('expense');
+        }
+
+        function setTxType(type) {
+            document.getElementById('tx-type').value = type;
+            ['income', 'expense', 'transfer'].forEach(t => {
+                const btn = document.getElementById(`btn-type-${t}`);
+                if(btn) btn.classList.toggle('bg-white', t === type);
+            });
+            document.getElementById('to-account-div')?.classList.toggle('hidden', type !== 'transfer');
+            populateSelectors();
+        }
+
+        function renderAccountGrid() {
+            document.getElementById('account-grid').innerHTML = accounts.map(a => `
+                <div class="bg-white p-5 rounded-2xl border flex justify-between items-center shadow-sm">
+                    <div>
+                        <span class="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-slate-100">${a.type}</span>
+                        <h4 class="font-bold text-slate-700 mt-1">${a.name}</h4>
+                        <p class="text-xl font-black ${a.balance < 0 ? 'text-rose-500' : 'text-slate-900'}">฿${a.balance.toLocaleString()}</p>
+                    </div>
+                    <button onclick="openAccountModal(${a.id})" class="p-3 text-slate-300 hover:text-brand-600">✏️</button>
+                </div>
+            `).join('');
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-container');
+            const q = document.getElementById('filter-search').value.toLowerCase();
+            const filtered = transactions.filter(t => t.note.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
+            container.innerHTML = filtered.map(t => `
+                <div class="bg-white p-4 rounded-2xl border shadow-sm flex justify-between items-center" onclick="editTx(${t.id})">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold ${t.type==='income'?'bg-emerald-50 text-emerald-500':'bg-rose-50 text-rose-500'}">
+                            ${t.type==='income'?'💰':t.type==='expense'?'💸':'↔️'}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-slate-700">${t.category}</h4>
+                            <p class="text-[10px] text-slate-400 uppercase">${t.date.split('T')[0]} • ${t.from}</p>
+                        </div>
+                    </div>
+                    <p class="font-black ${t.type==='income'?'text-emerald-600':'text-rose-500'}">฿${t.amount.toLocaleString()}</p>
+                </div>
+            `).join('');
+        }
+
+        function populateSelectors() {
+            const opts = accounts.map(a => `<option value="${a.id}">${a.name} (฿${a.balance.toLocaleString()})</option>`).join('');
+            document.getElementById('from-account').innerHTML = opts;
+            const toAcc = document.getElementById('to-account');
+            if(toAcc) toAcc.innerHTML = opts;
+            const cats = CATEGORIES.filter(c => c.type === document.getElementById('tx-type').value);
+            document.getElementById('tx-category').innerHTML = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        }
+
+        function renderAll() {
+            updateCalculations(); renderAccountGrid(); renderHistory(); populateSelectors();
+            localStorage.setItem(`ws_accs_${STORAGE_VER}`, JSON.stringify(accounts));
+            localStorage.setItem(`ws_txs_${STORAGE_VER}`, JSON.stringify(transactions));
+        }
+
+        function switchTab(tab) {
+            ['overview', 'accounts', 'history'].forEach(v => {
+                document.getElementById(`view-${v}`)?.classList.add('hidden');
+                document.getElementById(`nav-${v}`)?.classList.remove('active');
+            });
+            document.getElementById(`view-${tab}`)?.classList.remove('hidden');
+            document.getElementById(`nav-${tab}`)?.classList.add('active');
+        }
+
+        function openAccountModal(id = null) {
+            editingAccountId = id;
+            const modal = document.getElementById('account-modal');
+            if (id) {
+                const acc = accounts.find(a => a.id === id);
+                document.getElementById('new-acc-name').value = acc.name;
+                document.getElementById('new-acc-type').value = acc.type;
+                document.getElementById('new-acc-balance').value = acc.balance;
+            } else {
+                document.getElementById('new-acc-name').value = '';
+                document.getElementById('new-acc-balance').value = '';
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeAccountModal() { document.getElementById('account-modal').classList.add('hidden'); }
 
         async function toggleSyncMode() {
             isSyncActive = !isSyncActive;
@@ -326,199 +473,10 @@
             }
         }
 
-        // --- UI CORE RENDERS ---
-        function updateCalculations() {
-            const netTotal = accounts.reduce((s, a) => s + a.balance, 0);
-            const now = new Date();
-            const monthlyTxs = transactions.filter(t => new Date(t.date).getMonth() === now.getMonth());
-            const inc = monthlyTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-            const exp = monthlyTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-            
-            document.getElementById('display-net-worth').innerText = `฿ ${netTotal.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-            document.getElementById('display-cash-flow').innerText = `฿ ${(inc-exp).toLocaleString()}`;
-            document.getElementById('m-income-val').innerText = `฿ ${inc.toLocaleString()}`;
-            document.getElementById('m-expense-val').innerText = `฿ ${exp.toLocaleString()}`;
-            const netEl = document.getElementById('m-net-val');
-            netEl.innerText = `฿ ${(inc-exp).toLocaleString()}`;
-            netEl.style.color = (inc-exp) < 0 ? '#f43f5e' : '#059669';
-        }
-
-        function renderAccountGrid() {
-            document.getElementById('account-grid').innerHTML = accounts.map(a => `
-                <div class="bg-white p-5 rounded-2xl border flex justify-between items-center shadow-sm">
-                    <div>
-                        <span class="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 tracking-wider">${a.type}</span>
-                        <h4 class="font-bold text-slate-700 mt-1">${a.name}</h4>
-                        <p class="text-xl font-black ${a.balance < 0 ? 'text-rose-500' : 'text-slate-900'}">฿${a.balance.toLocaleString()}</p>
-                    </div>
-                    <button onclick="openAccountModal(${a.id})" class="p-3 text-slate-300">✏️</button>
-                </div>
-            `).join('');
-        }
-
-        function renderHistory() {
-            const container = document.getElementById('history-container');
-            const q = document.getElementById('filter-search').value.toLowerCase();
-            const filtered = transactions.filter(t => t.note.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
-            container.innerHTML = filtered.map(t => `
-                <div class="bg-white p-4 rounded-2xl border shadow-sm flex justify-between items-center active:bg-slate-50 transition-all" onclick="editTx(${t.id})">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold ${t.type==='income'?'bg-emerald-50 text-emerald-500':'bg-rose-50 text-rose-500'}">
-                            ${t.type==='income'?'💰':t.type==='expense'?'💸':'↔️'}
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-sm text-slate-700">${t.category}</h4>
-                            <p class="text-[10px] text-slate-400 uppercase">${t.date.split('T')[0]} • ${t.from}</p>
-                        </div>
-                    </div>
-                    <p class="font-black ${t.type==='income'?'text-emerald-600':'text-rose-500'}">฿${t.amount.toLocaleString()}</p>
-                </div>
-            `).join('');
-        }
-
-        function populateSelectors() {
-            const opts = accounts.map(a => `<option value="${a.id}">${a.name} (฿${a.balance.toLocaleString()})</option>`).join('');
-            document.getElementById('from-account').innerHTML = opts;
-            const toAcc = document.getElementById('to-account');
-            if(toAcc) toAcc.innerHTML = opts;
-            const cats = CATEGORIES.filter(c => c.type === document.getElementById('tx-type').value);
-            document.getElementById('tx-category').innerHTML = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-        }
-
-        // --- HANDLERS ---
-        async function handleTransaction(event) {
-            event.preventDefault();
-            if (editingTxId) revertBalance(editingTxId);
-
-            const type = document.getElementById('tx-type').value;
-            const amount = parseFloat(document.getElementById('tx-amount').value);
-            const fromId = parseInt(document.getElementById('from-account').value);
-            const fromAcc = accounts.find(a => a.id === fromId);
-
-            if (type !== 'income' && amount > fromAcc.balance && fromAcc.type !== 'debt') return alert("ยอดเงินไม่พอ!");
-
-            let newTx = {
-                id: editingTxId || Date.now(),
-                type, amount, from: fromAcc.name,
-                category: type === 'transfer' ? 'โอนเงิน' : document.getElementById('tx-category').value,
-                note: document.getElementById('tx-note').value,
-                date: document.getElementById('tx-date').value || new Date().toISOString()
-            };
-
-            if (type === 'transfer') {
-                const toAcc = accounts.find(a => a.id === parseInt(document.getElementById('to-account').value));
-                fromAcc.balance -= amount; toAcc.balance += amount; newTx.to = toAcc.name;
-            } else if (type === 'expense') fromAcc.balance -= amount;
-            else fromAcc.balance += amount;
-
-            if (editingTxId) {
-                const idx = transactions.findIndex(t => t.id === editingTxId);
-                if(idx !== -1) transactions[idx] = newTx;
-            } else transactions.unshift(newTx);
-
-            if(isSyncActive) await pushToCloud(newTx);
-            resetForm(); renderAll();
-        }
-
-        function revertBalance(id) {
-            const tx = transactions.find(t => t.id === id);
-            if (!tx) return;
-            const f = accounts.find(a => a.name === tx.from);
-            const t = accounts.find(a => a.name === tx.to);
-            if (tx.type === 'expense') { if(f) f.balance += tx.amount; }
-            else if (tx.type === 'income') { if(f) f.balance -= tx.amount; }
-            else { if(f) f.balance += tx.amount; if(t) t.balance -= tx.amount; }
-        }
-
-        function setTxType(type) {
-            document.getElementById('tx-type').value = type;
-            ['income', 'expense', 'transfer'].forEach(t => {
-                const btn = document.getElementById(`btn-type-${t}`);
-                if(btn) btn.classList.toggle('bg-white', t === type);
-            });
-            document.getElementById('to-account-div')?.classList.toggle('hidden', type !== 'transfer');
-            populateSelectors();
-        }
-
-        function renderAll() {
-            updateCalculations(); renderAccountGrid(); renderCharts(); renderHistory(); 
-            populateSelectors();
-            localStorage.setItem('ws_accs_v30', JSON.stringify(accounts));
-            localStorage.setItem('ws_txs_v30', JSON.stringify(transactions));
-            localStorage.setItem('ws_cats_v30', JSON.stringify(CATEGORIES));
-        }
-
-        function switchTab(tab) {
-            ['overview', 'accounts', 'budget', 'history'].forEach(v => {
-                const el = document.getElementById(`view-${v}`);
-                if(el) el.classList.add('hidden');
-                const nav = document.getElementById(`nav-${v}`);
-                if(nav) nav.classList.remove('active');
-            });
-            document.getElementById(`view-${tab}`)?.classList.remove('hidden');
-            document.getElementById(`nav-${tab}`)?.classList.add('active');
-            if(tab === 'overview' && typeof renderCharts === 'function') renderCharts();
-        }
-
-        function renderCharts() {
-            const canvas = document.getElementById('assetChart');
-            if(!canvas) return;
-            if(assetChart) assetChart.destroy();
-            assetChart = new Chart(canvas.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: accounts.map(a => a.name),
-                    datasets: [{ data: accounts.map(a => Math.abs(a.balance)), backgroundColor: accounts.map((_,i) => `hsl(${150+(i*45)}, 60%, 50%)`), borderWidth: 4, borderColor: '#ffffff' }]
-                },
-                options: { maintainAspectRatio: false, cutout: '80%', plugins: { legend: { display: false } } }
-            });
-        }
-
         function showLoading(show, txt) { document.getElementById('loading-screen').classList.toggle('hidden', !show); if(txt) document.getElementById('loading-text').innerText = txt; }
 
-        function openAccountModal(id = null) {
-            editingAccountId = id;
-            const modal = document.getElementById('account-modal');
-            const nInp = document.getElementById('new-acc-name');
-            const tInp = document.getElementById('new-acc-type');
-            const bInp = document.getElementById('new-acc-balance');
-            if (id) {
-                const acc = accounts.find(a => a.id === id);
-                nInp.value = acc.name; tInp.value = acc.type; bInp.value = acc.balance;
-            } else { nInp.value = ''; bInp.value = ''; }
-            modal.classList.remove('hidden');
-        }
-
-        function closeAccountModal() { document.getElementById('account-modal').classList.add('hidden'); }
-
-        function saveAccount() {
-            const n = document.getElementById('new-acc-name').value;
-            const t = document.getElementById('new-acc-type').value;
-            const b = parseFloat(document.getElementById('new-acc-balance').value) || 0;
-            if(!n) return;
-            if (editingAccountId) {
-                const idx = accounts.findIndex(a => a.id === editingAccountId);
-                accounts[idx] = { ...accounts[idx], name: n, type: t, balance: b };
-            } else accounts.push({ id: Date.now(), name: n, type: t, balance: b });
-            closeAccountModal(); renderAll();
-        }
-
-        function editTx(id) {
-            const tx = transactions.find(t => t.id === id);
-            editingTxId = id; switchTab('overview');
-            document.getElementById('form-container').classList.add('edit-mode');
-            document.getElementById('edit-indicator').classList.remove('hidden');
-            setTxType(tx.type);
-            document.getElementById('tx-amount').value = tx.amount;
-            document.getElementById('tx-note').value = tx.note;
-            document.getElementById('tx-date').value = tx.date.split('T')[0];
-            document.getElementById('tx-category').value = tx.category;
-            document.getElementById('submit-btn').innerText = "อัปเดต";
-            document.getElementById('cancel-edit-btn').classList.remove('hidden');
-        }
-
         function init() {
-            initSupabase(); ensureBudgetIntegrity(); setDefaultDate();
+            initSupabase();
             renderAll();
         }
 
