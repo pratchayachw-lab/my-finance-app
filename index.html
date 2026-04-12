@@ -31,7 +31,7 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .fade-in { animation: slideUp 0.3s ease-out forwards; }
         .custom-scroll::-webkit-scrollbar { display: none; }
-        input[type="date"], select, input[type="number"] { font-size: 16px !important; }
+        input[type="date"], select, input[type="number"], input[type="text"] { font-size: 16px !important; }
         .edit-mode { border: 2px solid #fbbf24 !important; background-color: #fffbeb !important; }
         .loading-overlay { background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -43,7 +43,7 @@
     <div id="loading-screen" class="hidden fixed inset-0 z-[100] flex items-center justify-center loading-overlay">
         <div class="text-center p-6 bg-white rounded-3xl shadow-2xl">
             <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-            <p class="text-sm font-bold text-brand-700" id="loading-text">กำลังจัดการข้อมูล...</p>
+            <p class="text-sm font-bold text-brand-700" id="loading-text">กำลังซิงค์ข้อมูล...</p>
         </div>
     </div>
 
@@ -131,15 +131,25 @@
                             <input type="date" id="tx-date" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none">
                         </div>
                     </div>
+
                     <div class="relative">
                         <input type="number" id="tx-amount" required placeholder="0.00" class="w-full p-5 bg-brand-50 border border-brand-100 rounded-2xl text-3xl font-black text-brand-700 text-center outline-none">
                         <div class="absolute left-5 top-1/2 -translate-y-1/2 text-brand-300 font-bold text-xl">฿</div>
                     </div>
-                    <div id="cat-select-container" class="space-y-1">
-                        <label class="text-[10px] font-bold text-slate-400 ml-1 uppercase">หมวดหมู่</label>
-                        <select id="tx-category" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none"></select>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div id="cat-select-container" class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-400 ml-1 uppercase">หมวดหมู่หลัก</label>
+                            <select id="tx-category" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none"></select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-400 ml-1 uppercase">หมวดหมู่ย่อย</label>
+                            <input type="text" id="tx-sub-category" placeholder="เช่น กาแฟ, รถเมล์..." class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none focus:border-brand-500">
+                        </div>
                     </div>
+
                     <input type="text" id="tx-note" placeholder="บันทึกช่วยจำ..." class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none">
+                    
                     <div class="flex gap-2 pt-2">
                         <button type="submit" id="submit-btn" class="flex-grow py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-all">บันทึกรายการ</button>
                         <button type="button" id="cancel-edit-btn" onclick="resetForm()" class="hidden px-6 bg-slate-100 text-slate-500 font-bold rounded-2xl">ยกเลิก</button>
@@ -232,7 +242,7 @@
         const SUPABASE_URL = "https://xyotqopwkcxblapoaiae.supabase.co"; 
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5b3Rxb3B3a2N4YmxhcG9haWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MDI0ODMsImV4cCI6MjA5MTQ3ODQ4M30.qNBaRDz9WGAXxX0tUcBLoMg6yA4Jz4EypTT_TJuZzkk";
         
-        const VERSION = "v80_stable_final";
+        const VERSION = "v90_sub_categories";
         const ST_ACCS = `ws_accs_${VERSION}`;
         const ST_TXS = `ws_txs_${VERSION}`;
         const ST_CATS = `ws_cats_${VERSION}`;
@@ -255,7 +265,7 @@
 
         const MONTHS_LIST = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 
-        // --- 1. CORE UTILITIES (PRE-DEFINED FOR SCOPE) ---
+        // --- 1. CORE UTILITIES ---
 
         function populateSelectors() {
             const opts = accounts.map(a => `<option value="${a.id}">${a.name} (฿${parseFloat(a.balance).toLocaleString()})</option>`).join('');
@@ -286,14 +296,12 @@
             const exp = monthlyTxs.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0);
             const actualNet = inc - exp;
             
-            // Header Stats
             const nwEl = document.getElementById('display-net-worth');
             if(nwEl) { nwEl.innerText = `฿ ${netWorthTotal.toLocaleString(undefined, {minimumFractionDigits:2})}`; nwEl.style.color = netWorthTotal < 0 ? '#f43f5e' : '#047857'; }
             
             const acEl = document.getElementById('display-cash-flow');
             if(acEl) { acEl.innerText = `฿ ${actualNet.toLocaleString(undefined, {minimumFractionDigits:2})}`; acEl.style.color = actualNet < 0 ? '#f43f5e' : '#059669'; }
 
-            // Plan Stats (Current Month Plan)
             const planData = annualBudgets[curM] || {};
             let pInc = 0; let pExp = 0;
             CATEGORIES.forEach(c => {
@@ -304,7 +312,6 @@
             const plEl = document.getElementById('display-plan-net');
             if(plEl) { plEl.innerText = `฿ ${planNet.toLocaleString(undefined, {minimumFractionDigits:2})}`; }
 
-            // Overview Card
             if(document.getElementById('m-income-val')) document.getElementById('m-income-val').innerText = `฿ ${inc.toLocaleString()}`;
             if(document.getElementById('m-expense-val')) document.getElementById('m-expense-val').innerText = `฿ ${exp.toLocaleString()}`;
             const netValEl = document.getElementById('m-net-val');
@@ -330,7 +337,7 @@
             const container = document.getElementById('history-container');
             if(!container) return;
             const q = document.getElementById('filter-search')?.value.toLowerCase() || "";
-            const filtered = transactions.filter(t => t.note.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
+            const filtered = transactions.filter(t => t.note.toLowerCase().includes(q) || t.category.toLowerCase().includes(q) || (t.sub_category && t.sub_category.toLowerCase().includes(q)));
             
             container.innerHTML = filtered.map(t => `
                 <div class="bg-white p-4 rounded-2xl border shadow-sm flex justify-between items-center active:bg-slate-50 transition-all" onclick="editTx(${t.id})">
@@ -339,7 +346,9 @@
                             ${t.type==='income'?'💰':t.type==='expense'?'💸':'↔️'}
                         </div>
                         <div>
-                            <h4 class="font-bold text-sm text-slate-700">${t.category}</h4>
+                            <h4 class="font-bold text-sm text-slate-700">
+                                ${t.category}${t.sub_category ? ` <span class="text-slate-300 font-normal">›</span> ${t.sub_category}` : ''}
+                            </h4>
                             <p class="text-[10px] text-slate-400 uppercase">${new Date(t.date).toLocaleDateString()} • ${t.from}</p>
                         </div>
                     </div>
@@ -478,6 +487,7 @@
                 id: editingTxId || Math.floor(Math.random() * 100000000),
                 type, amount, from: fromAcc.name,
                 category: type === 'transfer' ? 'โอนเงิน' : document.getElementById('tx-category').value,
+                sub_category: document.getElementById('tx-sub-category').value || null, // New field
                 note: document.getElementById('tx-note').value,
                 date: document.getElementById('tx-date').value || new Date().toISOString()
             };
@@ -568,6 +578,7 @@
             setTxType(tx.type);
             document.getElementById('tx-amount').value = tx.amount;
             document.getElementById('tx-note').value = tx.note;
+            document.getElementById('tx-sub-category').value = tx.sub_category || '';
             document.getElementById('tx-date').value = new Date(tx.date).toISOString().split('T')[0];
             document.getElementById('tx-category').value = tx.category;
             const fAcc = accounts.find(a => a.name === tx.from);
@@ -695,4 +706,3 @@
     </script>
 </body>
 </html>
-ฃ
