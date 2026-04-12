@@ -44,11 +44,11 @@
     <div id="loading-screen" class="hidden fixed inset-0 z-[100] flex items-center justify-center loading-overlay">
         <div class="text-center p-6 bg-white rounded-3xl shadow-2xl">
             <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-            <p class="text-sm font-bold text-brand-700" id="loading-text">กำลังซิงค์ข้อมูลกับ Cloud...</p>
+            <p class="text-sm font-bold text-brand-700" id="loading-text">กำลังซิงค์ข้อมูล...</p>
         </div>
     </div>
 
-    <!-- Header -->
+    <!-- Header Status Bar -->
     <header class="bg-white border-b border-slate-100 sticky top-0 z-40 px-5 py-4 flex justify-between items-center shadow-sm">
         <div class="flex items-center gap-4" onclick="switchTab('overview')">
             <div class="flex items-center gap-2">
@@ -65,8 +65,8 @@
         </div>
         
         <div class="flex items-center gap-2">
-            <div id="sync-status" class="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
-            <button id="sync-toggle-btn" onclick="toggleSyncMode()" class="w-12 h-12 rounded-2xl flex items-center justify-center border transition-all active:scale-90">
+            <div id="sync-status" class="w-2.5 h-2.5 rounded-full bg-slate-200" title="Connection status"></div>
+            <button id="sync-toggle-btn" onclick="toggleSyncMode()" class="w-12 h-12 rounded-2xl flex items-center justify-center border transition-all active:scale-90 shadow-sm" title="Switch Online/Offline">
                 <span id="sync-icon" class="text-xl">☁️</span>
             </button>
         </div>
@@ -76,10 +76,11 @@
         
         <!-- VIEW: OVERVIEW -->
         <div id="view-overview" class="fade-in space-y-6">
+            <!-- Cash Flow Card -->
             <div class="bg-white p-5 rounded-xl3 border border-slate-200 shadow-sm overflow-hidden">
                 <div class="flex justify-between items-center mb-4">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">กระแสเงินสดเดือนนี้</h4>
-                    <div id="cloud-indicator" class="text-[8px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 uppercase">Offline</div>
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">กระแสเงินสดเดือนนี้</h4>
+                    <div id="cloud-indicator" class="text-[8px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 uppercase">Checking...</div>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
                     <div class="text-center p-2 rounded-2xl bg-emerald-50">
@@ -97,17 +98,17 @@
                 </div>
             </div>
 
-            <!-- Form Card -->
+            <!-- Transaction Form -->
             <div id="form-container" class="bg-white p-5 rounded-xl3 border border-slate-200 shadow-sm">
                 <div class="flex justify-between items-center mb-4">
                     <h3 id="form-title" class="font-bold text-slate-800 text-lg">บันทึกรายการ</h3>
-                    <div id="edit-indicator" class="hidden text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded">โหมดแก้ไข</div>
+                    <div id="edit-indicator" class="hidden text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded uppercase tracking-wider">Edit Mode</div>
                 </div>
                 <form onsubmit="handleTransaction(event)" class="space-y-4">
                     <div class="flex p-1 bg-slate-100 rounded-2xl">
-                        <button type="button" onclick="setTxType('expense')" id="btn-type-expense" class="flex-1 py-2 text-sm font-bold rounded-xl bg-white shadow-sm text-expense">จ่าย</button>
-                        <button type="button" onclick="setTxType('income')" id="btn-type-income" class="flex-1 py-2 text-sm font-bold rounded-xl text-slate-500">รับ</button>
-                        <button type="button" onclick="setTxType('transfer')" id="btn-type-transfer" class="flex-1 py-2 text-sm font-bold rounded-xl text-slate-500">โอน</button>
+                        <button type="button" onclick="setTxType('expense')" id="btn-type-expense" class="flex-1 py-2 text-sm font-bold rounded-xl bg-white shadow-sm text-expense transition-all">จ่าย</button>
+                        <button type="button" onclick="setTxType('income')" id="btn-type-income" class="flex-1 py-2 text-sm font-bold rounded-xl text-slate-500 transition-all">รับ</button>
+                        <button type="button" onclick="setTxType('transfer')" id="btn-type-transfer" class="flex-1 py-2 text-sm font-bold rounded-xl text-slate-500 transition-all">โอน</button>
                     </div>
                     <input type="hidden" id="tx-type" value="expense">
                     <div class="grid grid-cols-2 gap-3">
@@ -146,17 +147,6 @@
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
                 <input type="text" id="filter-search" placeholder="ค้นหา..." class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none" oninput="renderHistory()">
             </div>
-            
-            <div class="bg-slate-900 rounded-2xl p-4 border border-slate-700">
-                <div class="flex justify-between items-center mb-3">
-                    <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cloud Sync Management</h5>
-                    <button onclick="syncLocalToCloud()" class="text-[9px] bg-brand-600 text-white px-2 py-1 rounded-md font-bold">Sync All to Cloud</button>
-                </div>
-                <div id="debug-logs" class="text-[9px] font-mono text-emerald-400 max-h-40 overflow-y-auto leading-relaxed">
-                    > ระบบพร้อมซิงค์ข้อมูล...
-                </div>
-            </div>
-
             <div id="history-container" class="space-y-3"></div>
         </div>
 
@@ -164,7 +154,10 @@
         <div id="view-accounts" class="hidden fade-in space-y-4">
             <div class="flex justify-between items-center px-2">
                 <h3 class="text-xl font-black text-slate-800">จัดการบัญชี</h3>
-                <button onclick="openAccountModal()" class="w-12 h-12 bg-brand-600 text-white rounded-2xl shadow-lg">+</button>
+                <button onclick="openAccountModal()" class="w-12 h-12 bg-brand-600 text-white rounded-2xl shadow-lg shadow-brand-500/20 active:scale-90">+</button>
+            </div>
+            <div class="bg-white p-5 rounded-xl3 shadow-sm border border-slate-100">
+                <div class="chart-container"><canvas id="assetChart"></canvas></div>
             </div>
             <div id="account-grid" class="space-y-4"></div>
         </div>
@@ -173,15 +166,15 @@
 
     <!-- Bottom Nav -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 flex justify-around items-center h-20 bottom-nav px-2 z-50">
-        <button onclick="switchTab('overview')" id="nav-overview" class="nav-item active flex flex-col items-center gap-1"><div class="icon-bg p-2 text-xl">🏠</div><span class="text-[10px] font-bold uppercase">หน้าแรก</span></button>
-        <button onclick="switchTab('accounts')" id="nav-accounts" class="nav-item flex flex-col items-center gap-1"><div class="icon-bg p-2 text-xl">💳</div><span class="text-[10px] font-bold uppercase">บัญชี</span></button>
-        <button onclick="switchTab('history')" id="nav-history" class="nav-item flex flex-col items-center gap-1"><div class="icon-bg p-2 text-xl">🕒</div><span class="text-[10px] font-bold uppercase">ประวัติ</span></button>
+        <button onclick="switchTab('overview')" id="nav-overview" class="nav-item active flex flex-col items-center gap-1 transition-all"><div class="icon-bg p-2 text-xl transition-all">🏠</div><span class="text-[10px] font-bold uppercase tracking-tighter">หน้าแรก</span></button>
+        <button onclick="switchTab('accounts')" id="nav-accounts" class="nav-item flex flex-col items-center gap-1 transition-all"><div class="icon-bg p-2 text-xl transition-all">💳</div><span class="text-[10px] font-bold uppercase tracking-tighter">บัญชี</span></button>
+        <button onclick="switchTab('history')" id="nav-history" class="nav-item flex flex-col items-center gap-1 transition-all"><div class="icon-bg p-2 text-xl transition-all">🕒</div><span class="text-[10px] font-bold uppercase tracking-tighter">ประวัติ</span></button>
     </nav>
 
     <!-- Account Modal -->
     <div id="account-modal" class="hidden fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-6 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl">
-            <h3 class="text-xl font-black mb-6 text-center">จัดการบัญชี</h3>
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl animate-scale-up">
+            <h3 class="text-xl font-black mb-6 text-center text-slate-800">จัดการบัญชี</h3>
             <div class="space-y-4">
                 <input type="text" id="new-acc-name" placeholder="ชื่อบัญชี..." class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
                 <select id="new-acc-type" class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
@@ -189,78 +182,60 @@
                     <option value="investment">การลงทุน</option>
                     <option value="debt">หนี้สิน (ยืมเงิน)</option>
                 </select>
-                <input type="number" id="new-acc-balance" placeholder="ยอดเงินปัจจุบัน..." class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
+                <input type="number" id="new-acc-balance" placeholder="ยอดเงินเริ่มต้น..." class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
             </div>
             <div class="flex gap-2 mt-8">
-                <button onclick="saveAccount()" class="flex-1 py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-lg">บันทึก</button>
+                <button onclick="saveAccount()" class="flex-1 py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-lg active:scale-95">บันทึก</button>
                 <button onclick="closeAccountModal()" class="flex-1 py-4 bg-slate-100 text-slate-400 font-bold rounded-2xl">ปิด</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- ⚙️ CONFIG ---
+        // --- ⚙️ SUPABASE CONFIG ---
         const SUPABASE_URL = "https://xyotqopwkcxblapoaiae.supabase.co"; 
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5b3Rxb3B3a2N4YmxhcG9haWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MDI0ODMsImV4cCI6MjA5MTQ3ODQ4M30.qNBaRDz9WGAXxX0tUcBLoMg6yA4Jz4EypTT_TJuZzkk";
         
+        const VERSION = "v45_prod";
+        const ST_ACCS = `ws_accs_${VERSION}`;
+        const ST_TXS = `ws_txs_${VERSION}`;
+        const ST_CATS = `ws_cats_${VERSION}`;
+
         let supabaseClient = null;
         let isSyncActive = localStorage.getItem('ws_sync_active') !== 'false';
-        const STORAGE_VER = "v40"; // Force refresh for new multi-table logic
-
-        // Models
-        let CATEGORIES = JSON.parse(localStorage.getItem(`ws_cats_${STORAGE_VER}`)) || [{ name: 'เงินเดือน', type: 'income' }, { name: 'อาหาร', type: 'expense' }];
-        let accounts = JSON.parse(localStorage.getItem(`ws_accs_${STORAGE_VER}`)) || [{ id: 1, name: 'เงินสด', type: 'asset', balance: 0 }];
-        let transactions = JSON.parse(localStorage.getItem(`ws_txs_${STORAGE_VER}`)) || [];
+        
+        let CATEGORIES = JSON.parse(localStorage.getItem(ST_CATS)) || [
+            { name: 'เงินเดือน', type: 'income' }, { name: 'โบนัส', type: 'income' }, 
+            { name: 'อาหาร', type: 'expense' }, { name: 'เดินทาง', type: 'expense' }, { name: 'อื่นๆ', type: 'expense' }
+        ];
+        let accounts = JSON.parse(localStorage.getItem(ST_ACCS)) || [{ id: 1, name: 'เงินสด', type: 'asset', balance: 0 }];
+        let transactions = JSON.parse(localStorage.getItem(ST_TXS)) || [];
         let editingTxId = null;
         let editingAccountId = null;
         let assetChart = null;
 
-        // --- CORE LOGIC ---
-        function logDebug(msg, isError = false) {
-            const logs = document.getElementById('debug-logs');
-            if(!logs) return;
-            const time = new Date().toLocaleTimeString();
-            logs.innerHTML = `<div class="${isError?'text-rose-400':'text-emerald-400'} mb-1"># [${time}] ${msg}</div>` + logs.innerHTML;
-        }
-
+        // --- SUPABASE ENGINE ---
         async function initSupabase() {
             if (typeof supabase === 'undefined') return;
             try {
                 supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 updateSyncUI();
                 if(isSyncActive) await fetchFromCloud();
-            } catch (e) { logDebug("Init Error: " + e.message, true); }
+            } catch (e) { console.error("Supabase Init failed", e); }
         }
 
         async function fetchFromCloud() {
             if (!supabaseClient || !isSyncActive) return;
             showLoading(true, "ซิงค์ข้อมูล Cloud...");
             try {
-                // Fetch Accounts first
-                const { data: accData, error: accErr } = await supabaseClient.from('accounts').select('*');
-                if (!accErr && accData && accData.length > 0) accounts = accData;
+                const { data: accData } = await supabaseClient.from('accounts').select('*');
+                if (accData && accData.length > 0) accounts = accData;
 
-                // Fetch Transactions
-                const { data: txData, error: txErr } = await supabaseClient.from('transactions').select('*').order('date', { ascending: false });
-                if (!txErr && txData) transactions = txData;
+                const { data: txData } = await supabaseClient.from('transactions').select('*').order('date', { ascending: false });
+                if (txData) transactions = txData;
 
-                logDebug(`Synced: ${accounts.length} Accounts, ${transactions.length} Records`);
                 renderAll();
-            } catch (e) { logDebug("Fetch Error: " + e.message, true); }
-            showLoading(false);
-        }
-
-        async function syncLocalToCloud() {
-            if (!supabaseClient) return;
-            showLoading(true, "Force uploading...");
-            try {
-                // Upload Accounts
-                for (const acc of accounts) await supabaseClient.from('accounts').upsert(acc);
-                // Upload Transactions
-                for (const tx of transactions) await supabaseClient.from('transactions').upsert(tx);
-                logDebug("All data pushed to Cloud");
-                alert("ส่งข้อมูลทั้งหมดขึ้น Cloud สำเร็จ!");
-            } catch (e) { logDebug("Upload error", true); }
+            } catch (e) { console.error("Cloud Sync error", e); }
             showLoading(false);
         }
 
@@ -268,27 +243,64 @@
             if (!supabaseClient || !isSyncActive) return;
             try {
                 await supabaseClient.from(table).upsert(data);
-                logDebug(`Cloud Updated: ${table}`);
-            } catch (e) { logDebug(`Push ${table} error`, true); }
+            } catch (e) { console.error(`Push ${table} error`, e); }
         }
 
+        async function toggleSyncMode() {
+            isSyncActive = !isSyncActive;
+            localStorage.setItem('ws_sync_active', isSyncActive);
+            updateSyncUI();
+            if (isSyncActive) await fetchFromCloud();
+        }
+
+        function updateSyncUI() {
+            const btn = document.getElementById('sync-toggle-btn');
+            const icon = document.getElementById('sync-icon');
+            const ind = document.getElementById('cloud-indicator');
+            const dot = document.getElementById('sync-status');
+            if(!btn) return;
+            if (isSyncActive) {
+                btn.classList.add('sync-btn-online'); btn.classList.remove('sync-btn-offline');
+                icon.innerText = "☁️";
+                if(ind) { ind.innerText = "ONLINE"; ind.className = "text-[8px] font-bold px-2 py-0.5 rounded-full bg-brand-50 text-brand-600 uppercase"; }
+                if(dot) dot.classList.replace('bg-slate-200', 'bg-brand-500');
+            } else {
+                btn.classList.add('sync-btn-offline'); btn.classList.remove('sync-btn-online');
+                icon.innerText = "💤";
+                if(ind) { ind.innerText = "OFFLINE"; ind.className = "text-[8px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 uppercase"; }
+                if(dot) dot.classList.replace('bg-brand-500', 'bg-slate-200');
+            }
+        }
+
+        // --- CORE CALCULATIONS ---
         function updateCalculations() {
-            const netTotal = accounts.reduce((s, a) => s + a.balance, 0);
+            const netTotal = accounts.reduce((s, a) => s + parseFloat(a.balance), 0);
             const now = new Date();
-            const monthlyTxs = transactions.filter(t => new Date(t.date).getMonth() === now.getMonth());
-            const inc = monthlyTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-            const exp = monthlyTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+            const curMonth = now.getMonth();
+            const curYear = now.getFullYear();
+            
+            const monthlyTxs = transactions.filter(t => {
+                const d = new Date(t.date);
+                return d.getMonth() === curMonth && d.getFullYear() === curYear;
+            });
+            
+            const inc = monthlyTxs.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount), 0);
+            const exp = monthlyTxs.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0);
             
             document.getElementById('display-net-worth').innerText = `฿ ${netTotal.toLocaleString(undefined, {minimumFractionDigits:2})}`;
             document.getElementById('display-cash-flow').innerText = `฿ ${(inc-exp).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+            
             document.getElementById('m-income-val').innerText = `฿ ${inc.toLocaleString()}`;
             document.getElementById('m-expense-val').innerText = `฿ ${exp.toLocaleString()}`;
             const netEl = document.getElementById('m-net-val');
             netEl.innerText = `฿ ${(inc-exp).toLocaleString()}`;
             netEl.style.color = (inc-exp) < 0 ? '#f43f5e' : '#059669';
+            
+            const netWorthDisplay = document.getElementById('display-net-worth');
+            netWorthDisplay.style.color = netTotal < 0 ? '#f43f5e' : '#047857';
         }
 
-        // --- HANDLERS ---
+        // --- LOGIC HANDLERS ---
         async function handleTransaction(event) {
             event.preventDefault();
             if (editingTxId) revertBalance(editingTxId);
@@ -298,7 +310,7 @@
             const fromId = parseInt(document.getElementById('from-account').value);
             const fromAcc = accounts.find(a => a.id === fromId);
 
-            if (type !== 'income' && amount > fromAcc.balance && fromAcc.type !== 'debt') return alert("ยอดเงินไม่พอ!");
+            if (type !== 'income' && amount > fromAcc.balance && fromAcc.type !== 'debt') return alert("ยอดเงินในบัญชีไม่พอ!");
 
             let newTx = {
                 id: editingTxId || Math.floor(Math.random() * 100000000),
@@ -329,6 +341,16 @@
             resetForm(); renderAll();
         }
 
+        function revertBalance(id) {
+            const tx = transactions.find(t => t.id === id);
+            if (!tx) return;
+            const f = accounts.find(a => a.name === tx.from);
+            const t = accounts.find(a => a.name === tx.to);
+            if (tx.type === 'expense') { if(f) f.balance += parseFloat(tx.amount); }
+            else if (tx.type === 'income') { if(f) f.balance -= parseFloat(tx.amount); }
+            else { if(f) f.balance += parseFloat(tx.amount); if(t) t.balance -= parseFloat(tx.amount); }
+        }
+
         async function saveAccount() {
             const name = document.getElementById('new-acc-name').value;
             const type = document.getElementById('new-acc-type').value;
@@ -349,69 +371,39 @@
             closeAccountModal(); renderAll();
         }
 
-        function deleteAccount(id) {
-            if(confirm('ลบบัญชี?')) {
-                accounts = accounts.filter(a => a.id !== id);
-                renderAll();
-                // (Optional: add deleteDoc on Supabase if needed)
-            }
-        }
-
         async function deleteTx(id) {
-            if(confirm('ลบรายการ? ยอดเงินจะคืนเข้าบัญชีเดิม')) {
+            if(confirm('ลบรายการนี้? ยอดเงินจะคืนเข้าบัญชีเดิม')) {
                 revertBalance(id);
                 transactions = transactions.filter(t => t.id !== id);
-                if(isSyncActive) {
-                    const { error } = await supabaseClient.from('transactions').delete().eq('id', id);
-                    if(!error) logDebug("Deleted from Cloud");
-                }
+                if(isSyncActive) await supabaseClient.from('transactions').delete().eq('id', id);
                 renderAll();
             }
         }
 
-        function revertBalance(id) {
+        function editTx(id) {
             const tx = transactions.find(t => t.id === id);
-            if (!tx) return;
-            const f = accounts.find(a => a.name === tx.from);
-            const t = accounts.find(a => a.name === tx.to);
-            if (tx.type === 'expense') { if(f) f.balance += tx.amount; }
-            else if (tx.type === 'income') { if(f) f.balance -= tx.amount; }
-            else { if(f) f.balance += tx.amount; if(t) t.balance -= tx.amount; }
+            editingTxId = id; switchTab('overview');
+            document.getElementById('form-container').classList.add('edit-mode');
+            document.getElementById('edit-indicator').classList.remove('hidden');
+            setTxType(tx.type);
+            document.getElementById('tx-amount').value = tx.amount;
+            document.getElementById('tx-note').value = tx.note;
+            document.getElementById('tx-date').value = tx.date.split('T')[0];
+            document.getElementById('tx-category').value = tx.category;
+            document.getElementById('submit-btn').innerText = "อัปเดตรายการ";
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
         }
 
-        // --- UI UTILS ---
-        function resetForm() {
-            editingTxId = null;
-            document.querySelector('form').reset();
-            document.getElementById('form-container').classList.remove('edit-mode');
-            document.getElementById('edit-indicator').classList.add('hidden');
-            document.getElementById('submit-btn').innerText = "บันทึกรายการ";
-            document.getElementById('cancel-edit-btn').classList.add('hidden');
-            setTxType('expense');
-        }
-
-        function setTxType(type) {
-            document.getElementById('tx-type').value = type;
-            ['income', 'expense', 'transfer'].forEach(t => {
-                const btn = document.getElementById(`btn-type-${t}`);
-                if(btn) btn.classList.toggle('bg-white', t === type);
-            });
-            document.getElementById('to-account-div')?.classList.toggle('hidden', type !== 'transfer');
-            populateSelectors();
-        }
-
+        // --- RENDER HELPERS ---
         function renderAccountGrid() {
             document.getElementById('account-grid').innerHTML = accounts.map(a => `
                 <div class="bg-white p-5 rounded-2xl border flex justify-between items-center shadow-sm">
                     <div>
                         <span class="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 tracking-wider">${a.type}</span>
                         <h4 class="font-bold text-slate-700 mt-1">${a.name}</h4>
-                        <p class="text-xl font-black ${a.balance < 0 ? 'text-rose-500' : 'text-slate-900'}">฿${a.balance.toLocaleString()}</p>
+                        <p class="text-xl font-black ${a.balance < 0 ? 'text-rose-500' : 'text-slate-900'}">฿${parseFloat(a.balance).toLocaleString()}</p>
                     </div>
-                    <div class="flex gap-1">
-                        <button onclick="openAccountModal(${a.id})" class="p-3 text-slate-300 hover:text-brand-600">✏️</button>
-                        <button onclick="deleteAccount(${a.id})" class="p-3 text-rose-200">🗑️</button>
-                    </div>
+                    <button onclick="openAccountModal(${a.id})" class="p-3 text-slate-300 hover:text-brand-600 transition-colors">✏️</button>
                 </div>
             `).join('');
         }
@@ -432,36 +424,11 @@
                         </div>
                     </div>
                     <div class="text-right">
-                        <p class="font-black ${t.type==='income'?'text-emerald-600':'text-rose-500'}">฿${t.amount.toLocaleString()}</p>
-                        <button onclick="event.stopPropagation(); deleteTx(${t.id})" class="text-[8px] font-bold text-rose-200 uppercase mt-1">Delete</button>
+                        <p class="font-black ${t.type==='income'?'text-emerald-600':'text-rose-500'}">฿${parseFloat(t.amount).toLocaleString()}</p>
+                        <button onclick="event.stopPropagation(); deleteTx(${t.id})" class="text-[8px] font-black text-rose-200 uppercase mt-1">ลบรายการ</button>
                     </div>
                 </div>
             `).join('');
-        }
-
-        function populateSelectors() {
-            const opts = accounts.map(a => `<option value="${a.id}">${a.name} (฿${a.balance.toLocaleString()})</option>`).join('');
-            document.getElementById('from-account').innerHTML = opts;
-            const toAcc = document.getElementById('to-account');
-            if(toAcc) toAcc.innerHTML = opts;
-            const cats = CATEGORIES.filter(c => c.type === document.getElementById('tx-type').value);
-            document.getElementById('tx-category').innerHTML = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-        }
-
-        function renderAll() {
-            updateCalculations(); renderAccountGrid(); renderHistory(); populateSelectors();
-            localStorage.setItem(`ws_accs_${STORAGE_VER}`, JSON.stringify(accounts));
-            localStorage.setItem(`ws_txs_${STORAGE_VER}`, JSON.stringify(transactions));
-        }
-
-        function switchTab(tab) {
-            ['overview', 'accounts', 'history'].forEach(v => {
-                document.getElementById(`view-${v}`)?.classList.add('hidden');
-                document.getElementById(`nav-${v}`)?.classList.remove('active');
-            });
-            document.getElementById(`view-${tab}`)?.classList.remove('hidden');
-            document.getElementById(`nav-${tab}`)?.classList.add('active');
-            if(tab === 'overview' && typeof renderCharts === 'function') renderCharts();
         }
 
         function renderCharts() {
@@ -472,10 +439,58 @@
                 type: 'doughnut',
                 data: {
                     labels: accounts.map(a => a.name),
-                    datasets: [{ data: accounts.map(a => Math.abs(a.balance)), backgroundColor: accounts.map((_,i) => `hsl(${150+(i*45)}, 60%, 50%)`), borderWidth: 4, borderColor: '#ffffff' }]
+                    datasets: [{ data: accounts.map(a => Math.abs(parseFloat(a.balance))), backgroundColor: accounts.map((_,i) => `hsl(${150+(i*45)}, 60%, 50%)`), borderWidth: 4, borderColor: '#ffffff' }]
                 },
                 options: { maintainAspectRatio: false, cutout: '80%', plugins: { legend: { display: false } } }
             });
+        }
+
+        function populateSelectors() {
+            const opts = accounts.map(a => `<option value="${a.id}">${a.name} (฿${parseFloat(a.balance).toLocaleString()})</option>`).join('');
+            document.getElementById('from-account').innerHTML = opts;
+            const toAcc = document.getElementById('to-account');
+            if(toAcc) toAcc.innerHTML = opts;
+            const cats = CATEGORIES.filter(c => c.type === document.getElementById('tx-type').value);
+            document.getElementById('tx-category').innerHTML = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        }
+
+        // --- UI UTILS ---
+        function resetForm() {
+            editingTxId = null;
+            const form = document.querySelector('form');
+            if(form) form.reset();
+            document.getElementById('form-container').classList.remove('edit-mode');
+            document.getElementById('edit-indicator').classList.add('hidden');
+            document.getElementById('submit-btn').innerText = "บันทึกรายการ";
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            const elDate = document.getElementById('tx-date');
+            if(elDate) elDate.value = new Date().toISOString().split('T')[0];
+            setTxType('expense');
+        }
+
+        function setTxType(type) {
+            document.getElementById('tx-type').value = type;
+            ['income', 'expense', 'transfer'].forEach(t => {
+                const btn = document.getElementById(`btn-type-${t}`);
+                if(btn) btn.classList.toggle('bg-white', t === type);
+            });
+            document.getElementById('to-account-div')?.classList.toggle('hidden', type !== 'transfer');
+            populateSelectors();
+        }
+
+        function switchTab(tab) {
+            ['overview', 'accounts', 'history'].forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if(el) el.classList.add('hidden');
+                const nav = document.getElementById(`nav-${v}`);
+                if(nav) nav.classList.remove('active');
+            });
+            const target = document.getElementById(`view-${tab}`);
+            if(target) target.classList.remove('hidden');
+            const targetNav = document.getElementById(`nav-${tab}`);
+            if(targetNav) targetNav.classList.add('active');
+            if(tab === 'overview' || tab === 'accounts') renderCharts();
+            window.scrollTo(0, 0);
         }
 
         function openAccountModal(id = null) {
@@ -495,49 +510,17 @@
 
         function closeAccountModal() { document.getElementById('account-modal').classList.add('hidden'); }
 
-        async function toggleSyncMode() {
-            isSyncActive = !isSyncActive;
-            localStorage.setItem('ws_sync_active', isSyncActive);
-            updateSyncUI();
-            if (isSyncActive) await fetchFromCloud();
-        }
-
-        function updateSyncUI() {
-            const btn = document.getElementById('sync-toggle-btn');
-            const icon = document.getElementById('sync-icon');
-            const ind = document.getElementById('cloud-indicator');
-            const dot = document.getElementById('sync-status');
-            if(!btn) return;
-            if (isSyncActive) {
-                btn.classList.add('sync-btn-online'); btn.classList.remove('sync-btn-offline');
-                icon.innerText = "☁️";
-                if(ind) { ind.innerText = "ONLINE"; ind.className = "text-[8px] font-bold px-2 py-0.5 rounded-full bg-brand-50 text-brand-600 uppercase"; }
-                if(dot) dot.classList.replace('bg-slate-200', 'bg-brand-500');
-            } else {
-                btn.classList.add('sync-btn-offline'); btn.classList.remove('sync-btn-online');
-                icon.innerText = "💤";
-                if(ind) { ind.innerText = "OFFLINE"; ind.className = "text-[8px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 uppercase"; }
-                if(dot) dot.classList.replace('bg-brand-500', 'bg-slate-200');
-            }
-        }
-
         function showLoading(show, txt) { document.getElementById('loading-screen').classList.toggle('hidden', !show); if(txt) document.getElementById('loading-text').innerText = txt; }
 
-        async function testConnection() {
-            logDebug("Pinging Supabase...");
-            try {
-                const { data, error } = await supabaseClient.from('transactions').select('id').limit(1);
-                if (error) throw error;
-                logDebug("✅ Ping Success - Read Access OK");
-                alert("เชื่อมต่อปกติ ข้อมูล Cloud พร้อมใช้งาน!");
-            } catch (e) { logDebug("❌ Connection Error: " + e.message, true); alert(e.message); }
-        }
-
-        function ensureBudgetIntegrity() {
-            // Placeholder for budget logic if needed
+        function renderAll() {
+            updateCalculations(); renderAccountGrid(); renderHistory(); populateSelectors();
+            localStorage.setItem(ST_ACCS, JSON.stringify(accounts));
+            localStorage.setItem(ST_TXS, JSON.stringify(transactions));
         }
 
         function init() {
+            const elDate = document.getElementById('tx-date');
+            if(elDate) elDate.value = new Date().toISOString().split('T')[0];
             initSupabase();
             renderAll();
         }
