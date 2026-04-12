@@ -220,8 +220,8 @@
                     <button onclick="copyPrevMonthBudget()" class="text-[9px] font-bold text-brand-600 underline uppercase">เดือนก่อน</button>
                 </div>
                 <div class="flex gap-2 overflow-x-auto pb-4 custom-scroll no-scrollbar" id="budget-month-selector"></div>
-                <div id="budget-editor-income" class="space-y-4 border-b border-slate-100 pb-6"></div>
-                <div id="budget-editor-expense" class="space-y-4 pt-6"></div>
+                <div id="budget-editor-income" class="space-y-6 border-b border-slate-100 pb-6"></div>
+                <div id="budget-editor-expense" class="space-y-6 pt-6"></div>
                 <button onclick="saveBudgets()" class="w-full mt-8 py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-all">บันทึกงบประมาณ</button>
             </div>
         </div>
@@ -268,7 +268,7 @@
         const SUPABASE_URL = "https://xyotqopwkcxblapoaiae.supabase.co"; 
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5b3Rxb3B3a2N4YmxhcG9haWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MDI0ODMsImV4cCI6MjA5MTQ3ODQ4M30.qNBaRDz9WGAXxX0tUcBLoMg6yA4Jz4EypTT_TJuZzkk";
         
-        const VERSION = "v100_final_subcats";
+        const VERSION = "v101_smart_budget";
         const ST_ACCS = `ws_accs_${VERSION}`;
         const ST_TXS = `ws_txs_${VERSION}`;
         const ST_CATS = `ws_cats_${VERSION}`;
@@ -308,10 +308,9 @@
             const mainCats = CATEGORIES.filter(c => c.type === currentType && c.parent_id === null);
             if(catEl) {
                 catEl.innerHTML = mainCats.map(c => `<option value="${c.name}" data-id="${c.id}">${c.name}</option>`).join('');
-                populateSubSelectors(); // Update sub-cats based on selected main cat
+                populateSubSelectors(); 
             }
 
-            // Also populate the Parent Selector in Category Management
             const parentSelect = document.getElementById('sub-cat-parent-select');
             if(parentSelect) {
                 const allMainCats = CATEGORIES.filter(c => c.parent_id === null);
@@ -331,11 +330,9 @@
                 const subCats = CATEGORIES.filter(c => c.parent_id === parentId);
                 if(subCats.length > 0) {
                     subCatEl.innerHTML = '<option value="">-- เลือก --</option>' + subCats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-                    document.getElementById('sub-cat-container').style.opacity = '1';
                     subCatEl.disabled = false;
                 } else {
                     subCatEl.innerHTML = '<option value="">ไม่มีหมวดหมู่ย่อย</option>';
-                    document.getElementById('sub-cat-container').style.opacity = '0.5';
                     subCatEl.disabled = true;
                 }
             }
@@ -362,12 +359,22 @@
             const acEl = document.getElementById('display-cash-flow');
             if(acEl) { acEl.innerText = `฿ ${actualNet.toLocaleString(undefined, {minimumFractionDigits:2})}`; acEl.style.color = actualNet < 0 ? '#f43f5e' : '#059669'; }
 
+            // PLAN NET CALCULATION
             const planData = annualBudgets[curM] || {};
             let pInc = 0; let pExp = 0;
-            CATEGORIES.filter(c => c.parent_id === null).forEach(c => {
-                const val = parseFloat(planData[c.name] || 0);
-                if(c.type === 'income') pInc += val; else pExp += val;
+            
+            CATEGORIES.forEach(c => {
+                // If it has inputs in the editor, we sum it up
+                const hasSubs = CATEGORIES.some(sc => sc.parent_id === c.id);
+                const isMainWithoutSubs = c.parent_id === null && !hasSubs;
+                const isSub = c.parent_id !== null;
+
+                if (isMainWithoutSubs || isSub) {
+                    const val = parseFloat(planData[c.name] || 0);
+                    if(c.type === 'income') pInc += val; else pExp += val;
+                }
             });
+
             const planNet = pInc - pExp;
             const plEl = document.getElementById('display-plan-net');
             if(plEl) { plEl.innerText = `฿ ${planNet.toLocaleString(undefined, {minimumFractionDigits:2})}`; }
@@ -455,19 +462,45 @@
         function renderBudgetEditor() {
             const b = annualBudgets[selectedBudgetMonth] || {};
             const mainCats = CATEGORIES.filter(c => c.parent_id === null);
-            const input = (c) => `
-                <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                    <label class="flex-grow text-[11px] font-bold text-slate-600 uppercase leading-none">${c.name}</label>
-                    <div class="relative">
-                        <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">฿</span>
-                        <input type="number" oninput="updateCalculations()" data-cat="${c.name}" value="${b[c.name]||0}" class="budget-input w-28 pl-5 pr-2 py-1 bg-white border rounded-xl text-right text-xs font-black outline-none focus:border-brand-500">
-                    </div>
-                </div>`;
-            
+
+            const generateHtml = (type) => {
+                let html = `<p class="text-[10px] font-bold ${type === 'income' ? 'text-emerald-500' : 'text-rose-500'} uppercase mb-4 tracking-widest leading-none">${type === 'income' ? '💰 ประมาณการรายรับ' : '💸 ประมาณการรายจ่าย'}</p>`;
+                
+                mainCats.filter(c => c.type === type).forEach(m => {
+                    const subs = CATEGORIES.filter(sc => sc.parent_id === m.id);
+                    if (subs.length > 0) {
+                        html += `<div class="mb-4">
+                            <p class="text-[9px] font-black text-slate-400 uppercase mb-2 pl-1">${m.name}</p>
+                            <div class="space-y-2 pl-3 border-l-2 border-slate-100">
+                                ${subs.map(s => `
+                                    <div class="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
+                                        <label class="flex-grow text-[11px] font-bold text-slate-600">${s.name}</label>
+                                        <div class="relative">
+                                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">฿</span>
+                                            <input type="number" oninput="updateCalculations()" data-cat="${s.name}" value="${b[s.name]||0}" class="budget-input w-28 pl-5 pr-2 py-1 bg-slate-50 border rounded-xl text-right text-xs font-black outline-none focus:border-brand-500">
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>`;
+                    } else {
+                        html += `
+                        <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100 mb-4">
+                            <label class="flex-grow text-[11px] font-bold text-slate-600 uppercase leading-none">${m.name}</label>
+                            <div class="relative">
+                                <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">฿</span>
+                                <input type="number" oninput="updateCalculations()" data-cat="${m.name}" value="${b[m.name]||0}" class="budget-input w-28 pl-5 pr-2 py-1 bg-white border rounded-xl text-right text-xs font-black outline-none focus:border-brand-500">
+                            </div>
+                        </div>`;
+                    }
+                });
+                return html;
+            };
+
             const incEd = document.getElementById('budget-editor-income');
             const expEd = document.getElementById('budget-editor-expense');
-            if(incEd) incEd.innerHTML = `<p class="text-[10px] font-bold text-emerald-500 uppercase mb-4 tracking-widest">💰 เป้าหมายรายรับ</p>` + mainCats.filter(c => c.type === 'income').map(input).join('');
-            if(expEd) expEd.innerHTML = `<p class="text-[10px] font-bold text-rose-500 uppercase mb-4 tracking-widest">💸 เป้าหมายรายจ่าย</p>` + mainCats.filter(c => c.type === 'expense').map(input).join('');
+            if(incEd) incEd.innerHTML = generateHtml('income');
+            if(expEd) expEd.innerHTML = generateHtml('expense');
         }
 
         function renderMonthSelector() {
@@ -627,7 +660,7 @@
         }
 
         async function deleteCategory(name) {
-            if(confirm(`ลบหมวดหมู่หลัก ${name}? (หมวดหมู่ย่อยจะยังอยู่แต่ไม่มีพ่อแม่)`)) {
+            if(confirm(`ลบหมวดหมู่หลัก ${name}?`)) {
                 const cat = CATEGORIES.find(c => c.name === name && c.parent_id === null);
                 CATEGORIES = CATEGORIES.filter(c => c.id !== cat.id);
                 if(isSyncActive && cat) await supabaseClient.from('categories').delete().eq('id', cat.id);
