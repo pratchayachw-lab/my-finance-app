@@ -54,18 +54,18 @@
             <div class="flex items-center gap-1.5 shrink-0" onclick="switchTab('overview')">
                 <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white text-base shadow-lg">฿</div>
                 <div class="leading-tight">
-                    <h1 class="text-[9px] font-bold text-slate-400 uppercase">Net Worth</h1>
+                    <h1 class="text-[9px] font-bold text-slate-400 uppercase leading-none">Net Worth</h1>
                     <span class="text-sm font-black text-brand-700" id="display-net-worth">฿ 0.00</span>
                 </div>
             </div>
             <!-- Month Net (จริง) -->
             <div class="border-l border-slate-100 pl-2 leading-tight shrink-0">
-                <h1 class="text-[9px] font-bold text-slate-400 uppercase">Net (จริง)</h1>
+                <h1 class="text-[9px] font-bold text-slate-400 uppercase leading-none">Net (จริง)</h1>
                 <span class="text-sm font-black text-brand-600" id="display-cash-flow">฿ 0.00</span>
             </div>
             <!-- Month Net (แผน) -->
             <div class="border-l border-slate-100 pl-2 leading-tight shrink-0">
-                <h1 class="text-[9px] font-bold text-slate-400 uppercase">Net (แผน)</h1>
+                <h1 class="text-[9px] font-bold text-slate-400 uppercase leading-none">Net (แผน)</h1>
                 <span class="text-sm font-black text-slate-400" id="display-plan-net">฿ 0.00</span>
             </div>
         </div>
@@ -73,7 +73,7 @@
         <div class="flex items-center gap-2 shrink-0">
             <div id="sync-status" class="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
             <button id="sync-toggle-btn" onclick="toggleSyncMode()" class="w-10 h-10 rounded-xl flex items-center justify-center border transition-all active:scale-90 shadow-sm">
-                <span id="sync-icon" class="text-lg">☁️</span>
+                <span id="sync-icon" class="text-xl">☁️</span>
             </button>
         </div>
     </header>
@@ -85,8 +85,8 @@
             <!-- Summary Dashboard -->
             <div class="bg-white p-5 rounded-xl3 border border-slate-200 shadow-sm overflow-hidden">
                 <div class="flex justify-between items-center mb-4">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">สรุปกระแสเงินสดเดือนนี้</h4>
-                    <div id="cloud-indicator" class="text-[8px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 uppercase tracking-widest">Syncing...</div>
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">สรุปกระแสเงินสดเดือนนี้</h4>
+                    <div id="cloud-indicator" class="text-[8px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 uppercase tracking-widest">ONLINE</div>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
                     <div class="text-center p-2 rounded-2xl bg-emerald-50">
@@ -107,8 +107,8 @@
             <!-- Form Card -->
             <div id="form-container" class="bg-white p-5 rounded-xl3 border border-slate-200 shadow-sm transition-all duration-300">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 id="form-title" class="font-bold text-slate-800 text-lg">บันทึกรายการ</h3>
-                    <div id="edit-indicator" class="hidden text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded tracking-wider uppercase leading-none">Editing Hist.</div>
+                    <h3 id="form-title" class="font-bold text-slate-800 text-lg tracking-tighter leading-none">บันทึกรายการ</h3>
+                    <div id="edit-indicator" class="hidden text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded tracking-wider uppercase leading-none mt-1">Editing</div>
                 </div>
                 <form onsubmit="handleTransaction(event)" class="space-y-4">
                     <div class="flex p-1 bg-slate-100 rounded-2xl">
@@ -140,11 +140,11 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div id="cat-select-container" class="space-y-1">
                             <label class="text-[10px] font-bold text-slate-400 ml-1 uppercase">หมวดหมู่หลัก</label>
-                            <select id="tx-category" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none"></select>
+                            <select id="tx-category" onchange="populateSubSelectors()" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none"></select>
                         </div>
-                        <div class="space-y-1">
+                        <div id="sub-cat-container" class="space-y-1">
                             <label class="text-[10px] font-bold text-slate-400 ml-1 uppercase">หมวดหมู่ย่อย</label>
-                            <input type="text" id="tx-sub-category" placeholder="เช่น กาแฟ, รถเมล์..." class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none focus:border-brand-500">
+                            <select id="tx-sub-category" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none focus:border-brand-500"></select>
                         </div>
                     </div>
 
@@ -172,26 +172,52 @@
 
         <!-- VIEW: BUDGET -->
         <div id="view-budget" class="hidden fade-in space-y-8">
+            <!-- Category Management -->
             <div class="bg-white p-6 rounded-xl3 shadow-sm border border-slate-200">
                 <h3 class="text-lg font-bold text-brand-700 mb-4 uppercase text-xs tracking-widest">จัดการหมวดหมู่</h3>
-                <div class="flex flex-wrap gap-2 mb-6">
-                    <select id="new-cat-type" class="p-2 border rounded-xl text-sm bg-slate-50 outline-none">
-                        <option value="expense">จ่าย</option>
-                        <option value="income">รับ</option>
-                    </select>
-                    <input type="text" id="new-cat-name" placeholder="ชื่อหมวดหมู่..." class="flex-grow p-2 border rounded-xl text-sm outline-none bg-slate-50">
-                    <button onclick="addCategory()" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-bold">+</button>
+                
+                <!-- Main Category Add -->
+                <div class="space-y-2 mb-6">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase ml-1">เพิ่มหมวดหมู่หลัก</p>
+                    <div class="flex gap-2">
+                        <select id="new-cat-type" class="p-2 border rounded-xl text-sm bg-slate-50 outline-none">
+                            <option value="expense">จ่าย</option>
+                            <option value="income">รับ</option>
+                        </select>
+                        <input type="text" id="new-cat-name" placeholder="ชื่อหมวดหมู่หลัก..." class="flex-grow p-2 border rounded-xl text-sm outline-none bg-slate-50">
+                        <button onclick="addCategory()" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-bold">+</button>
+                    </div>
                 </div>
-                <div class="space-y-4">
-                    <div><p class="text-[10px] font-bold text-rose-400 mb-2 uppercase">รายจ่าย</p><div id="cat-list-expense" class="flex flex-wrap gap-2"></div></div>
-                    <div><p class="text-[10px] font-bold text-emerald-400 mb-2 uppercase">รายรับ</p><div id="cat-list-income" class="flex flex-wrap gap-2"></div></div>
+
+                <!-- Sub Category Add -->
+                <div class="space-y-2 border-t border-slate-50 pt-4 mb-6">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase ml-1">เพิ่มหมวดหมู่ย่อย</p>
+                    <div class="flex gap-2">
+                        <select id="sub-cat-parent-select" class="flex-1 p-2 border rounded-xl text-sm bg-slate-50 outline-none">
+                            <!-- Populated dynamically -->
+                        </select>
+                        <input type="text" id="new-sub-cat-name" placeholder="ชื่อหมวดหมู่ย่อย..." class="flex-grow p-2 border rounded-xl text-sm outline-none bg-slate-50">
+                        <button onclick="addSubCategory()" class="px-4 py-2 bg-brand-700 text-white rounded-xl text-sm font-bold">+</button>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <p class="text-[10px] font-bold text-rose-400 mb-3 uppercase tracking-widest">รายจ่าย</p>
+                        <div id="cat-list-expense" class="space-y-3"></div>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-emerald-400 mb-3 uppercase tracking-widest">รายรับ</p>
+                        <div id="cat-list-income" class="space-y-3"></div>
+                    </div>
                 </div>
             </div>
 
+            <!-- Monthly Budget Settings -->
             <div class="bg-white p-6 rounded-xl3 shadow-sm border border-slate-200">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-bold text-brand-700 uppercase text-xs tracking-widest">ตั้งงบประมาณ: <span id="editing-month-name" class="text-slate-400"></span></h3>
-                    <button onclick="copyPrevMonthBudget()" class="text-[9px] font-bold text-brand-500 underline uppercase">เดือนก่อน</button>
+                    <button onclick="copyPrevMonthBudget()" class="text-[9px] font-bold text-brand-600 underline uppercase">เดือนก่อน</button>
                 </div>
                 <div class="flex gap-2 overflow-x-auto pb-4 custom-scroll no-scrollbar" id="budget-month-selector"></div>
                 <div id="budget-editor-income" class="space-y-4 border-b border-slate-100 pb-6"></div>
@@ -220,7 +246,7 @@
     <!-- Account Modal -->
     <div id="account-modal" class="hidden fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-6 backdrop-blur-sm">
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl">
-            <h3 class="text-xl font-black mb-6 text-center text-slate-800 uppercase tracking-tighter">จัดการบัญชี</h3>
+            <h3 class="text-xl font-black mb-6 text-center text-slate-800 uppercase tracking-tighter leading-none">จัดการบัญชี</h3>
             <div class="space-y-4">
                 <input type="text" id="new-acc-name" placeholder="ชื่อบัญชี..." class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
                 <select id="new-acc-type" class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
@@ -228,7 +254,7 @@
                     <option value="investment">การลงทุน</option>
                     <option value="debt">หนี้สิน (ยืมเงิน)</option>
                 </select>
-                <input type="number" id="new-acc-balance" placeholder="ยอดเงินเริ่มต้น..." class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
+                <input type="number" id="new-acc-balance" placeholder="ยอดเงินปัจจุบัน..." class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
             </div>
             <div class="flex gap-2 mt-8">
                 <button onclick="saveAccount()" class="flex-1 py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-lg active:scale-95">บันทึก</button>
@@ -242,7 +268,7 @@
         const SUPABASE_URL = "https://xyotqopwkcxblapoaiae.supabase.co"; 
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5b3Rxb3B3a2N4YmxhcG9haWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MDI0ODMsImV4cCI6MjA5MTQ3ODQ4M30.qNBaRDz9WGAXxX0tUcBLoMg6yA4Jz4EypTT_TJuZzkk";
         
-        const VERSION = "v90_sub_categories";
+        const VERSION = "v100_final_subcats";
         const ST_ACCS = `ws_accs_${VERSION}`;
         const ST_TXS = `ws_txs_${VERSION}`;
         const ST_CATS = `ws_cats_${VERSION}`;
@@ -252,7 +278,9 @@
         let isSyncActive = localStorage.getItem('ws_sync_active') !== 'false';
         
         let CATEGORIES = JSON.parse(localStorage.getItem(ST_CATS)) || [
-            { id: 1, name: 'เงินเดือน', type: 'income' }, { id: 2, name: 'อาหาร', type: 'expense' }, { id: 3, name: 'อื่นๆ', type: 'expense' }
+            { id: 1, name: 'เงินเดือน', type: 'income', parent_id: null },
+            { id: 2, name: 'อาหาร', type: 'expense', parent_id: null },
+            { id: 3, name: 'อื่นๆ', type: 'expense', parent_id: null }
         ];
         let accounts = JSON.parse(localStorage.getItem(ST_ACCS)) || [{ id: 1, name: 'เงินสด', type: 'asset', balance: 0 }];
         let transactions = JSON.parse(localStorage.getItem(ST_TXS)) || [];
@@ -277,8 +305,40 @@
             if(toEl) toEl.innerHTML = opts;
             
             const currentType = document.getElementById('tx-type')?.value || 'expense';
-            const cats = CATEGORIES.filter(c => c.type === currentType);
-            if(catEl) catEl.innerHTML = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            const mainCats = CATEGORIES.filter(c => c.type === currentType && c.parent_id === null);
+            if(catEl) {
+                catEl.innerHTML = mainCats.map(c => `<option value="${c.name}" data-id="${c.id}">${c.name}</option>`).join('');
+                populateSubSelectors(); // Update sub-cats based on selected main cat
+            }
+
+            // Also populate the Parent Selector in Category Management
+            const parentSelect = document.getElementById('sub-cat-parent-select');
+            if(parentSelect) {
+                const allMainCats = CATEGORIES.filter(c => c.parent_id === null);
+                parentSelect.innerHTML = allMainCats.map(c => `<option value="${c.id}">${c.name} (${c.type === 'income' ? 'รับ' : 'จ่าย'})</option>`).join('');
+            }
+        }
+
+        function populateSubSelectors() {
+            const catEl = document.getElementById('tx-category');
+            const subCatEl = document.getElementById('tx-sub-category');
+            if(!catEl || !subCatEl) return;
+
+            const selectedOption = catEl.options[catEl.selectedIndex];
+            const parentId = selectedOption ? parseInt(selectedOption.getAttribute('data-id')) : null;
+
+            if(parentId) {
+                const subCats = CATEGORIES.filter(c => c.parent_id === parentId);
+                if(subCats.length > 0) {
+                    subCatEl.innerHTML = '<option value="">-- เลือก --</option>' + subCats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+                    document.getElementById('sub-cat-container').style.opacity = '1';
+                    subCatEl.disabled = false;
+                } else {
+                    subCatEl.innerHTML = '<option value="">ไม่มีหมวดหมู่ย่อย</option>';
+                    document.getElementById('sub-cat-container').style.opacity = '0.5';
+                    subCatEl.disabled = true;
+                }
+            }
         }
 
         function updateCalculations() {
@@ -304,7 +364,7 @@
 
             const planData = annualBudgets[curM] || {};
             let pInc = 0; let pExp = 0;
-            CATEGORIES.forEach(c => {
+            CATEGORIES.filter(c => c.parent_id === null).forEach(c => {
                 const val = parseFloat(planData[c.name] || 0);
                 if(c.type === 'income') pInc += val; else pExp += val;
             });
@@ -346,10 +406,10 @@
                             ${t.type==='income'?'💰':t.type==='expense'?'💸':'↔️'}
                         </div>
                         <div>
-                            <h4 class="font-bold text-sm text-slate-700">
+                            <h4 class="font-bold text-sm text-slate-700 leading-tight">
                                 ${t.category}${t.sub_category ? ` <span class="text-slate-300 font-normal">›</span> ${t.sub_category}` : ''}
                             </h4>
-                            <p class="text-[10px] text-slate-400 uppercase">${new Date(t.date).toLocaleDateString()} • ${t.from}</p>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold mt-0.5">${new Date(t.date).toLocaleDateString()} • ${t.from}</p>
                         </div>
                     </div>
                     <div class="text-right">
@@ -361,27 +421,53 @@
         }
 
         function renderCategoryList() {
-            const pill = (c) => `<div class="px-3 py-1 bg-white border border-slate-100 rounded-full text-[10px] font-bold flex items-center gap-2 shadow-sm">${c.name}<button onclick="deleteCategory('${c.name}')" class="text-rose-400 font-black">×</button></div>`;
             const expList = document.getElementById('cat-list-expense');
             const incList = document.getElementById('cat-list-income');
-            if(expList) expList.innerHTML = CATEGORIES.filter(c => c.type === 'expense').map(pill).join('');
-            if(incList) incList.innerHTML = CATEGORIES.filter(c => c.type === 'income').map(pill).join('');
+            if(!expList || !incList) return;
+
+            const buildTree = (type) => {
+                const mainCats = CATEGORIES.filter(c => c.type === type && c.parent_id === null);
+                return mainCats.map(m => {
+                    const subs = CATEGORIES.filter(c => c.parent_id === m.id);
+                    return `
+                    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-[11px] font-black uppercase text-slate-600">${m.name}</span>
+                            <button onclick="deleteCategory('${m.name}')" class="text-rose-300 text-xs font-bold">ลบ</button>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            ${subs.map(s => `
+                                <div class="px-2 py-0.5 bg-white border border-slate-200 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm">
+                                    ${s.name}
+                                    <button onclick="deleteCategoryById(${s.id})" class="text-slate-300">×</button>
+                                </div>
+                            `).join('')}
+                            ${subs.length === 0 ? '<span class="text-[9px] text-slate-300 italic">ยังไม่มีหมวดหมู่ย่อย</span>' : ''}
+                        </div>
+                    </div>`;
+                }).join('');
+            };
+
+            expList.innerHTML = buildTree('expense');
+            incList.innerHTML = buildTree('income');
         }
 
         function renderBudgetEditor() {
             const b = annualBudgets[selectedBudgetMonth] || {};
+            const mainCats = CATEGORIES.filter(c => c.parent_id === null);
             const input = (c) => `
                 <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                    <label class="flex-grow text-[11px] font-bold text-slate-600 uppercase">${c.name}</label>
+                    <label class="flex-grow text-[11px] font-bold text-slate-600 uppercase leading-none">${c.name}</label>
                     <div class="relative">
                         <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">฿</span>
                         <input type="number" oninput="updateCalculations()" data-cat="${c.name}" value="${b[c.name]||0}" class="budget-input w-28 pl-5 pr-2 py-1 bg-white border rounded-xl text-right text-xs font-black outline-none focus:border-brand-500">
                     </div>
                 </div>`;
+            
             const incEd = document.getElementById('budget-editor-income');
             const expEd = document.getElementById('budget-editor-expense');
-            if(incEd) incEd.innerHTML = `<p class="text-[10px] font-bold text-emerald-500 uppercase mb-4 tracking-widest">💰 เป้าหมายรายรับ</p>` + CATEGORIES.filter(c => c.type === 'income').map(input).join('');
-            if(expEd) expEd.innerHTML = `<p class="text-[10px] font-bold text-rose-500 uppercase mb-4 tracking-widest">💸 เป้าหมายรายจ่าย</p>` + CATEGORIES.filter(c => c.type === 'expense').map(input).join('');
+            if(incEd) incEd.innerHTML = `<p class="text-[10px] font-bold text-emerald-500 uppercase mb-4 tracking-widest">💰 เป้าหมายรายรับ</p>` + mainCats.filter(c => c.type === 'income').map(input).join('');
+            if(expEd) expEd.innerHTML = `<p class="text-[10px] font-bold text-rose-500 uppercase mb-4 tracking-widest">💸 เป้าหมายรายจ่าย</p>` + mainCats.filter(c => c.type === 'expense').map(input).join('');
         }
 
         function renderMonthSelector() {
@@ -437,29 +523,6 @@
             try { await supabaseClient.from(table).upsert(data); } catch (e) { console.error(`Push error`, e); }
         }
 
-        async function toggleSyncMode() {
-            isSyncActive = !isSyncActive;
-            localStorage.setItem('ws_sync_active', isSyncActive);
-            updateSyncUI();
-            if (isSyncActive) await fetchFromCloud();
-        }
-
-        function updateSyncUI() {
-            const btn = document.getElementById('sync-toggle-btn');
-            const icon = document.getElementById('sync-icon');
-            const dot = document.getElementById('sync-status');
-            if(!btn) return;
-            if (isSyncActive) {
-                btn.classList.add('sync-btn-online'); btn.classList.remove('sync-btn-offline');
-                icon.innerText = "☁️";
-                if(dot) dot.classList.replace('bg-slate-200', 'bg-brand-500');
-            } else {
-                btn.classList.add('sync-btn-offline'); btn.classList.remove('sync-btn-online');
-                icon.innerText = "💤";
-                if(dot) dot.classList.replace('bg-brand-500', 'bg-slate-200');
-            }
-        }
-
         // --- 3. BUSINESS LOGIC HANDLERS ---
 
         function revertBalance(id) {
@@ -487,7 +550,7 @@
                 id: editingTxId || Math.floor(Math.random() * 100000000),
                 type, amount, from: fromAcc.name,
                 category: type === 'transfer' ? 'โอนเงิน' : document.getElementById('tx-category').value,
-                sub_category: document.getElementById('tx-sub-category').value || null, // New field
+                sub_category: document.getElementById('tx-sub-category').value || null,
                 note: document.getElementById('tx-note').value,
                 date: document.getElementById('tx-date').value || new Date().toISOString()
             };
@@ -544,18 +607,38 @@
             const name = document.getElementById('new-cat-name').value;
             const type = document.getElementById('new-cat-type').value;
             if(!name.trim()) return;
-            const newCat = { id: Date.now(), name, type };
+            const newCat = { id: Date.now(), name, type, parent_id: null };
             CATEGORIES.push(newCat);
             if(isSyncActive) await pushToCloud('categories', newCat);
             document.getElementById('new-cat-name').value = '';
             renderAll();
         }
 
+        async function addSubCategory() {
+            const name = document.getElementById('new-sub-cat-name').value;
+            const parentId = parseInt(document.getElementById('sub-cat-parent-select').value);
+            if(!name.trim() || !parentId) return;
+            const parent = CATEGORIES.find(c => c.id === parentId);
+            const newCat = { id: Date.now(), name, type: parent.type, parent_id: parentId };
+            CATEGORIES.push(newCat);
+            if(isSyncActive) await pushToCloud('categories', newCat);
+            document.getElementById('new-sub-cat-name').value = '';
+            renderAll();
+        }
+
         async function deleteCategory(name) {
-            if(confirm(`ลบหมวดหมู่ ${name}?`)) {
-                const cat = CATEGORIES.find(c => c.name === name);
-                CATEGORIES = CATEGORIES.filter(c => c.name !== name);
+            if(confirm(`ลบหมวดหมู่หลัก ${name}? (หมวดหมู่ย่อยจะยังอยู่แต่ไม่มีพ่อแม่)`)) {
+                const cat = CATEGORIES.find(c => c.name === name && c.parent_id === null);
+                CATEGORIES = CATEGORIES.filter(c => c.id !== cat.id);
                 if(isSyncActive && cat) await supabaseClient.from('categories').delete().eq('id', cat.id);
+                renderAll();
+            }
+        }
+
+        async function deleteCategoryById(id) {
+            if(confirm(`ลบหมวดหมู่นี้?`)) {
+                CATEGORIES = CATEGORIES.filter(c => c.id !== id);
+                if(isSyncActive) await supabaseClient.from('categories').delete().eq('id', id);
                 renderAll();
             }
         }
@@ -578,9 +661,11 @@
             setTxType(tx.type);
             document.getElementById('tx-amount').value = tx.amount;
             document.getElementById('tx-note').value = tx.note;
-            document.getElementById('tx-sub-category').value = tx.sub_category || '';
             document.getElementById('tx-date').value = new Date(tx.date).toISOString().split('T')[0];
             document.getElementById('tx-category').value = tx.category;
+            populateSubSelectors();
+            document.getElementById('tx-sub-category').value = tx.sub_category || '';
+            
             const fAcc = accounts.find(a => a.name === tx.from);
             if(fAcc) document.getElementById('from-account').value = fAcc.id;
             if(tx.to) {
@@ -614,7 +699,7 @@
             if(target) target.classList.remove('hidden');
             if(targetNav) targetNav.classList.add('active');
             if(tab === 'overview' || tab === 'accounts') renderCharts();
-            if(tab === 'budget') { renderBudgetEditor(); renderMonthSelector(); }
+            if(tab === 'budget') { renderBudgetEditor(); renderMonthSelector(); populateSelectors(); renderCategoryList(); }
             window.scrollTo(0, 0);
         }
 
@@ -683,15 +768,27 @@
             }
         }
 
-        function syncLocalToCloud() {
-            if (!supabaseClient) return alert("โปรดรอการเชื่อมต่อ...");
-            showLoading(true, "Force uploading...");
-            Promise.all([
-                ...accounts.map(acc => pushToCloud('accounts', acc)),
-                ...transactions.map(tx => pushToCloud('transactions', tx))
-            ]).then(() => {
-                showLoading(false); alert("ซิงค์สำเร็จ!");
-            });
+        async function toggleSyncMode() {
+            isSyncActive = !isSyncActive;
+            localStorage.setItem('ws_sync_active', isSyncActive);
+            updateSyncUI();
+            if (isSyncActive) await fetchFromCloud();
+        }
+
+        function updateSyncUI() {
+            const btn = document.getElementById('sync-toggle-btn');
+            const icon = document.getElementById('sync-icon');
+            const dot = document.getElementById('sync-status');
+            if(!btn) return;
+            if (isSyncActive) {
+                btn.classList.add('sync-btn-online'); btn.classList.remove('sync-btn-offline');
+                icon.innerText = "☁️";
+                if(dot) dot.classList.replace('bg-slate-200', 'bg-brand-500');
+            } else {
+                btn.classList.add('sync-btn-offline'); btn.classList.remove('sync-btn-online');
+                icon.innerText = "💤";
+                if(dot) dot.classList.replace('bg-brand-500', 'bg-slate-200');
+            }
         }
 
         function init() {
