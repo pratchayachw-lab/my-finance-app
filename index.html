@@ -1,1114 +1,1077 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WalletSync AI Pro</title>
-    <!-- External Libraries -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: { 50: '#f0fdf4', 100: '#dcfce7', 500: '#10b981', 600: '#059669', 700: '#047857', 900: '#064e3b' },
-                        income: '#10b981', expense: '#f43f5e', invest: '#3b82f6', debt: '#e11d48'
-                    },
-                    borderRadius: { 'xl2': '1.25rem', 'xl3': '2rem' }
-                }
-            }
-        }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
-        .bottom-nav { padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 20px rgba(0,0,0,0.05); }
-        .nav-item.active { color: #059669; }
-        .nav-item.active .icon-bg { background-color: #dcfce7; }
-        .chart-container { position: relative; width: 100%; height: 220px; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .fade-in { animation: slideUp 0.3s ease-out forwards; }
-        .custom-scroll::-webkit-scrollbar { display: none; }
-        input[type="date"], select, input[type="number"], input[type="text"] { font-size: 16px !important; }
-        .edit-mode { border: 2px solid #fbbf24 !important; background-color: #fffbeb !important; }
-        .loading-overlay { background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        /* FIX #6: proper active button style for tx type */
-        .tx-type-btn { transition: all 0.15s ease; }
-        .tx-type-btn.active-expense { background: white; color: #f43f5e; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 0.75rem; }
-        .tx-type-btn.active-income  { background: white; color: #059669; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 0.75rem; }
-        .tx-type-btn.active-transfer{ background: white; color: #3b82f6; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 0.75rem; }
-        .tx-type-btn.inactive { color: #64748b; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>WalletSync</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #0a0a0f;
+  --bg2:       #111118;
+  --bg3:       #1a1a24;
+  --border:    #2a2a38;
+  --border2:   #3a3a50;
+  --text:      #f0f0f8;
+  --muted:     #7a7a9a;
+  --green:     #00e676;
+  --green-bg:  rgba(0,230,118,.1);
+  --green-brd: rgba(0,230,118,.25);
+  --red:       #ff5370;
+  --red-bg:    rgba(255,83,112,.1);
+  --red-brd:   rgba(255,83,112,.25);
+  --blue:      #64b5f6;
+  --blue-bg:   rgba(100,181,246,.1);
+  --blue-brd:  rgba(100,181,246,.25);
+  --amber:     #ffb74d;
+  --r:         18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Prompt',sans-serif;overscroll-behavior:none;}
+body{padding-bottom:calc(70px + env(safe-area-inset-bottom));}
+::-webkit-scrollbar{width:0;height:0;}
+input,select,button{font-family:'Prompt',sans-serif;border:none;outline:none;background:none;cursor:pointer;}
+input[type=number]{-moz-appearance:textfield;}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+
+/* ── NAV ── */
+#nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:var(--bg2);border-top:1px solid var(--border);
+  display:flex;align-items:stretch;justify-content:space-around;
+  height:calc(60px + env(safe-area-inset-bottom));
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex:1;padding:8px 4px;}
+.nb-icon{font-size:20px;line-height:1;transition:transform .2s;}
+.nb-lbl{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;}
+.nb.on .nb-lbl{color:var(--green);}
+.nb.on .nb-icon{transform:scale(1.15);}
+
+/* ── HEADER ── */
+#hdr{
+  position:sticky;top:0;z-index:100;
+  background:rgba(10,10,15,.9);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:10px 16px;
+}
+.hdr-inner{display:flex;justify-content:space-between;align-items:center;max-width:480px;margin:0 auto;}
+
+/* ── FAB ── */
+#fab{
+  position:fixed;bottom:calc(68px + env(safe-area-inset-bottom) + 14px);right:18px;z-index:150;
+  width:54px;height:54px;border-radius:17px;
+  background:var(--green);color:#0a0a0f;font-size:26px;font-weight:300;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 0 rgba(0,230,118,.5);
+  animation:pulse 2.5s infinite;
+  transition:transform .15s,background .2s;
+}
+#fab:active{transform:scale(.9);}
+#fab.editing{background:var(--amber);box-shadow:0 0 0 0 rgba(255,183,77,.5);animation:pulseAmber 2.5s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,230,118,.4);}50%{box-shadow:0 0 0 8px rgba(0,230,118,0);}}
+@keyframes pulseAmber{0%,100%{box-shadow:0 0 0 0 rgba(255,183,77,.4);}50%{box-shadow:0 0 0 8px rgba(255,183,77,0);}}
+
+/* ── SHEET ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(6px);}
+.overlay.on{opacity:1;pointer-events:all;}
+.sheet{
+  position:fixed;bottom:0;left:0;right:0;z-index:301;
+  background:var(--bg2);border-top:1px solid var(--border);
+  border-radius:24px 24px 0 0;
+  transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1);
+  max-height:94vh;overflow-y:auto;
+  padding-bottom:calc(16px + env(safe-area-inset-bottom));
+}
+.sheet.on{transform:translateY(0);}
+.handle{width:36px;height:3px;background:var(--border2);border-radius:2px;margin:12px auto 4px;}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);}
+.card2{background:var(--bg3);border:1px solid var(--border);border-radius:14px;}
+
+/* ── TYPE TABS ── */
+.ttabs{display:flex;gap:6px;}
+.tt{
+  flex:1;padding:11px 8px;border-radius:13px;font-size:13px;font-weight:700;
+  border:1.5px solid var(--border);color:var(--muted);transition:all .18s;
+}
+.tt.e{background:var(--red-bg);color:var(--red);border-color:var(--red-brd);}
+.tt.i{background:var(--green-bg);color:var(--green);border-color:var(--green-brd);}
+.tt.t{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-brd);}
+
+/* ── NUMPAD ── */
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.nk{
+  height:60px;border-radius:14px;background:var(--bg3);border:1px solid var(--border);
+  font-size:21px;font-weight:600;color:var(--text);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .1s;user-select:none;
+}
+.nk:active{background:var(--border2);transform:scale(.93);}
+.nk.del{color:var(--muted);}
+.amt{font-size:46px;font-weight:900;text-align:center;padding:14px 0 2px;letter-spacing:-2px;line-height:1;}
+.amt.e{color:var(--red);}
+.amt.i{color:var(--green);}
+.amt.t{color:var(--blue);}
+
+/* ── CAT GRID ── */
+.cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+.cc{
+  padding:11px 4px;border-radius:13px;border:1.5px solid var(--border);
+  background:var(--bg3);display:flex;flex-direction:column;align-items:center;gap:4px;
+  transition:all .18s;cursor:pointer;
+}
+.cc-emoji{font-size:22px;line-height:1.1;}
+.cc-name{font-size:10px;font-weight:600;color:var(--muted);text-align:center;line-height:1.2;}
+.cc.sel{border-color:var(--green);background:var(--green-bg);}
+.cc.sel .cc-name{color:var(--green);}
+
+/* ── FIELD ── */
+.f{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:14px;font-weight:500;color:var(--text);width:100%;}
+.f:focus{border-color:var(--green);}
+.fl{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px;}
+select.f option{background:var(--bg2);}
+
+/* ── TX ITEM ── */
+.txi{display:flex;align-items:center;gap:11px;padding:12px;border-radius:14px;background:var(--bg2);border:1px solid var(--border);cursor:pointer;transition:background .12s;}
+.txi:active{background:var(--bg3);}
+.txi-ico{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.txi-ico.e{background:var(--red-bg);}
+.txi-ico.i{background:var(--green-bg);}
+.txi-ico.t{background:var(--blue-bg);}
+.dsep{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;padding:10px 4px 5px;}
+
+/* ── ACC CARD ── */
+.ac{border-radius:var(--r);padding:18px;overflow:hidden;position:relative;}
+.ac.asset{background:linear-gradient(135deg,#0a1a10,#0f2a18);border:1px solid var(--green-brd);}
+.ac.investment{background:linear-gradient(135deg,#0a0f1a,#0f1a2d);border:1px solid var(--blue-brd);}
+.ac.debt{background:linear-gradient(135deg,#1a0a0a,#2d0f0f);border:1px solid var(--red-brd);}
+
+/* ── PROGRESS ── */
+.pbar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:8px;}
+.pfill{height:100%;border-radius:3px;transition:width .6s ease;}
+
+/* ── MISC ── */
+.pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.05em;}
+.pill.asset{background:var(--green-bg);color:var(--green);}
+.pill.investment{background:var(--blue-bg);color:var(--blue);}
+.pill.debt{background:var(--red-bg);color:var(--red);}
+.sec{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
+.divider{height:1px;background:var(--border);margin:12px 0;}
+.fade{animation:fade .3s ease both;}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── LOADING ── */
+#load{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
+.spin{width:30px;height:30px;border:2.5px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:sp .7s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;top:68px;left:50%;transform:translateX(-50%) translateY(-10px);z-index:400;
+  background:var(--bg3);border:1px solid var(--border2);border-radius:12px;
+  padding:9px 18px;font-size:12px;font-weight:700;
+  opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;
+}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.ok{border-color:var(--green-brd);color:var(--green);}
+#toast.err{border-color:var(--red-brd);color:var(--red);}
+
+/* ── BTN ── */
+.btn-g{width:100%;padding:15px;border-radius:14px;background:var(--green);color:#0a0a0f;font-size:15px;font-weight:800;letter-spacing:.02em;}
+.btn-ghost{width:100%;padding:14px;border-radius:14px;background:var(--bg3);border:1px solid var(--border);font-size:14px;font-weight:700;color:var(--muted);}
+</style>
 </head>
-<body class="text-slate-800 pb-24">
+<body>
 
-    <!-- Loading Overlay -->
-    <div id="loading-screen" class="hidden fixed inset-0 z-[100] flex items-center justify-center loading-overlay">
-        <div class="text-center p-6 bg-white rounded-3xl shadow-2xl">
-            <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-            <p class="text-sm font-bold text-brand-700" id="loading-text">กำลังซิงค์ข้อมูล...</p>
-        </div>
+<!-- LOADING -->
+<div id="load">
+  <div class="spin"></div>
+  <p style="font-size:12px;font-weight:600;color:var(--muted);" id="load-txt">กำลังโหลด...</p>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ════════════════ HEADER ════════════════ -->
+<header id="hdr">
+  <div class="hdr-inner">
+    <div>
+      <div style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:1px;">NET WORTH</div>
+      <div id="h-nw" style="font-size:24px;font-weight:900;letter-spacing:-1px;color:var(--green);line-height:1;">฿0</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="text-align:right;">
+        <div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.05em;text-transform:uppercase;">เดือนนี้</div>
+        <div id="h-net" style="font-size:15px;font-weight:800;color:var(--green);">฿0</div>
+      </div>
+      <button onclick="toggleSync()" id="sync-btn" style="width:36px;height:36px;border-radius:11px;background:var(--bg3);border:1px solid var(--border);font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;">
+        <span id="sync-ic">☁️</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ════════════════ MAIN ════════════════ -->
+<main style="max-width:480px;margin:0 auto;padding:12px 14px;">
+
+  <!-- HOME -->
+  <div id="v-home" class="fade" style="display:block;">
+    <!-- Strip -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:14px;">
+      <div class="card2" style="padding:11px;text-align:center;">
+        <div style="font-size:9px;font-weight:700;color:var(--green);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;">รับ</div>
+        <div id="s-inc" style="font-size:15px;font-weight:900;color:var(--green);letter-spacing:-.5px;">฿0</div>
+      </div>
+      <div class="card2" style="padding:11px;text-align:center;">
+        <div style="font-size:9px;font-weight:700;color:var(--red);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;">จ่าย</div>
+        <div id="s-exp" style="font-size:15px;font-weight:900;color:var(--red);letter-spacing:-.5px;">฿0</div>
+      </div>
+      <div class="card2" style="padding:11px;text-align:center;">
+        <div style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;">แผน</div>
+        <div id="s-plan" style="font-size:15px;font-weight:900;color:var(--muted);letter-spacing:-.5px;">฿0</div>
+      </div>
     </div>
 
-    <!-- Header Status Bar -->
-    <header class="bg-white border-b border-slate-100 sticky top-0 z-40 px-3 py-4 flex justify-between items-center shadow-sm">
-        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <div class="flex items-center gap-1.5 shrink-0" onclick="switchTab('overview')">
-                <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white text-base shadow-lg">฿</div>
-                <div class="leading-tight">
-                    <h1 class="text-[9px] font-bold text-slate-400 uppercase leading-none">Net Worth</h1>
-                    <span class="text-sm font-black text-brand-700" id="display-net-worth">฿ 0.00</span>
-                </div>
-            </div>
-            <div class="border-l border-slate-100 pl-2 leading-tight shrink-0">
-                <h1 class="text-[9px] font-bold text-slate-400 uppercase leading-none">Net (จริง)</h1>
-                <span class="text-sm font-black text-brand-600" id="display-cash-flow">฿ 0.00</span>
-            </div>
-            <div class="border-l border-slate-100 pl-2 leading-tight shrink-0">
-                <h1 class="text-[9px] font-bold text-slate-400 uppercase leading-none">Net (แผน)</h1>
-                <span class="text-sm font-black text-slate-400" id="display-plan-net">฿ 0.00</span>
-            </div>
+    <!-- Recent -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
+      <span class="sec">รายการล่าสุด</span>
+      <button onclick="switchTab('history')" style="font-size:11px;font-weight:700;color:var(--green);">ดูทั้งหมด →</button>
+    </div>
+    <div id="recent-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+  </div>
+
+  <!-- ACCOUNTS -->
+  <div id="v-accounts" class="fade" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <span class="sec">บัญชีทั้งหมด</span>
+      <button onclick="openAccSheet()" style="width:34px;height:34px;border-radius:11px;background:var(--green);color:#0a0a0f;font-size:20px;display:flex;align-items:center;justify-content:center;font-weight:300;flex-shrink:0;">+</button>
+    </div>
+    <div class="card" style="padding:14px;margin-bottom:12px;">
+      <canvas id="chart-acc" height="180"></canvas>
+    </div>
+    <div id="acc-list" style="display:flex;flex-direction:column;gap:9px;"></div>
+  </div>
+
+  <!-- BUDGET -->
+  <div id="v-budget" class="fade" style="display:none;">
+    <!-- Month tabs -->
+    <div style="overflow-x:auto;padding-bottom:4px;margin-bottom:12px;">
+      <div id="m-tabs" style="display:flex;gap:6px;width:max-content;"></div>
+    </div>
+    <!-- Progress list -->
+    <div id="bud-progress" style="display:flex;flex-direction:column;gap:9px;margin-bottom:14px;"></div>
+    <!-- Toggle manage -->
+    <button onclick="toggleManage()" id="mgr-btn" style="width:100%;padding:12px;border-radius:13px;border:1px dashed var(--border2);font-size:12px;font-weight:700;color:var(--muted);background:transparent;margin-bottom:10px;transition:all .2s;">⚙️ จัดการหมวดหมู่ & ตั้งงบประมาณ</button>
+    <div id="mgr-sec" style="display:none;flex-direction:column;gap:10px;">
+      <!-- Add cat -->
+      <div class="card" style="padding:14px;">
+        <div class="sec" style="margin-bottom:10px;">เพิ่มหมวดหมู่</div>
+        <div style="display:flex;gap:7px;margin-bottom:8px;">
+          <select id="new-cat-type" class="f" style="width:auto;flex-shrink:0;padding:10px 10px;">
+            <option value="expense">💸 จ่าย</option>
+            <option value="income">💰 รับ</option>
+          </select>
+          <input type="text" id="new-cat-name" class="f" placeholder="ชื่อหมวดหมู่หลัก...">
+          <button onclick="addCategory()" style="padding:0 14px;background:var(--green);color:#0a0a0f;border-radius:12px;font-weight:900;font-size:20px;flex-shrink:0;">+</button>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
-            <div id="sync-status" class="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
-            <button id="sync-toggle-btn" onclick="toggleSyncMode()" class="w-10 h-10 rounded-xl flex items-center justify-center border transition-all active:scale-90 shadow-sm">
-                <span id="sync-icon" class="text-xl">☁️</span>
-            </button>
+        <div style="display:flex;gap:7px;">
+          <select id="sub-parent" class="f" style="flex:1;padding:10px 10px;"></select>
+          <input type="text" id="new-sub-name" class="f" style="flex:1;" placeholder="ชื่อย่อย...">
+          <button onclick="addSubCat()" style="padding:0 14px;background:var(--bg3);color:var(--green);border:1.5px solid var(--green-brd);border-radius:12px;font-weight:900;font-size:20px;flex-shrink:0;">+</button>
         </div>
-    </header>
-
-    <main class="max-w-md mx-auto p-4">
-
-        <!-- VIEW: OVERVIEW -->
-        <div id="view-overview" class="fade-in space-y-6">
-            <div class="bg-white p-5 rounded-xl3 border border-slate-200 shadow-sm overflow-hidden">
-                <div class="flex justify-between items-center mb-4">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">สรุปกระแสเงินสดเดือนนี้</h4>
-                    <div id="cloud-indicator" class="text-[8px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 uppercase tracking-widest">ONLINE</div>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="text-center p-2 rounded-2xl bg-emerald-50">
-                        <span class="text-[10px] font-bold text-emerald-600 uppercase block">Income</span>
-                        <span class="text-sm font-black text-emerald-700" id="m-income-val">฿ 0</span>
-                    </div>
-                    <div class="text-center p-2 rounded-2xl bg-rose-50">
-                        <span class="text-[10px] font-bold text-rose-600 uppercase block">Expense</span>
-                        <span class="text-sm font-black text-rose-700" id="m-expense-val">฿ 0</span>
-                    </div>
-                    <div class="text-center p-2 rounded-2xl bg-slate-50 border border-slate-100">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase block">Net Flow</span>
-                        <span class="text-sm font-black" id="m-net-val">฿ 0</span>
-                    </div>
-                </div>
-            </div>
-
-            <div id="form-container" class="bg-white p-5 rounded-xl3 border border-slate-200 shadow-sm transition-all duration-300">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 id="form-title" class="font-bold text-slate-800 text-lg tracking-tighter leading-none">บันทึกรายการ</h3>
-                    <div id="edit-indicator" class="hidden text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded tracking-wider uppercase leading-none mt-1">Editing</div>
-                </div>
-                <form onsubmit="handleTransaction(event)" class="space-y-4">
-                    <div class="flex p-1 bg-slate-100 rounded-2xl">
-                        <!-- FIX #6: use tx-type-btn class for proper toggling -->
-                        <button type="button" onclick="setTxType('expense')"  id="btn-type-expense"  class="tx-type-btn flex-1 py-2 text-sm font-bold transition-all">จ่าย</button>
-                        <button type="button" onclick="setTxType('income')"   id="btn-type-income"   class="tx-type-btn flex-1 py-2 text-sm font-bold transition-all">รับ</button>
-                        <button type="button" onclick="setTxType('transfer')" id="btn-type-transfer" class="tx-type-btn flex-1 py-2 text-sm font-bold transition-all">โอน</button>
-                    </div>
-                    <input type="hidden" id="tx-type" value="expense">
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-slate-400 ml-1 uppercase">ต้นทาง</label>
-                            <select id="from-account" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none"></select>
-                        </div>
-                        <div id="to-account-div" class="space-y-1 hidden">
-                            <label class="text-[10px] font-bold text-slate-400 ml-1 uppercase">ปลายทาง</label>
-                            <select id="to-account" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none"></select>
-                        </div>
-                        <div id="date-div" class="space-y-1">
-                            <label class="text-[10px] font-bold text-slate-400 ml-1 uppercase">วันที่</label>
-                            <input type="date" id="tx-date" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none">
-                        </div>
-                    </div>
-
-                    <div class="relative">
-                        <input type="number" id="tx-amount" required min="0.01" step="0.01" placeholder="0.00" class="w-full p-5 bg-brand-50 border border-brand-100 rounded-2xl text-3xl font-black text-brand-700 text-center outline-none">
-                        <div class="absolute left-5 top-1/2 -translate-y-1/2 text-brand-300 font-bold text-xl">฿</div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div id="cat-select-container" class="space-y-1">
-                            <label class="text-[10px] font-bold text-slate-400 ml-1 uppercase">หมวดหมู่หลัก</label>
-                            <select id="tx-category" onchange="populateSubSelectors()" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none"></select>
-                        </div>
-                        <div id="sub-cat-container" class="space-y-1">
-                            <label class="text-[10px] font-bold text-slate-400 ml-1 uppercase">หมวดหมู่ย่อย</label>
-                            <select id="tx-sub-category" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none focus:border-brand-500"></select>
-                        </div>
-                    </div>
-
-                    <input type="text" id="tx-note" placeholder="บันทึกช่วยจำ..." class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none">
-
-                    <div class="flex gap-2 pt-2">
-                        <button type="submit" id="submit-btn" class="flex-grow py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-all">บันทึกรายการ</button>
-                        <button type="button" id="cancel-edit-btn" onclick="resetForm()" class="hidden px-6 bg-slate-100 text-slate-500 font-bold rounded-2xl">ยกเลิก</button>
-                    </div>
-                </form>
-            </div>
+      </div>
+      <!-- Cat list -->
+      <div class="card" style="padding:14px;">
+        <div class="sec" style="margin-bottom:8px;">💸 รายจ่าย</div>
+        <div id="cl-exp" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;"></div>
+        <div class="sec" style="margin-bottom:8px;">💰 รายรับ</div>
+        <div id="cl-inc" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+      <!-- Budget inputs -->
+      <div class="card" style="padding:14px;">
+        <div class="sec" style="margin-bottom:12px;">ตั้งงบประมาณ</div>
+        <div id="be-inc" style="margin-bottom:10px;"></div>
+        <div class="divider"></div>
+        <div id="be-exp"></div>
+        <div style="display:flex;gap:7px;margin-top:12px;">
+          <button onclick="copyPrev()" class="btn-ghost" style="flex:1;">คัดลอกเดือนก่อน</button>
+          <button onclick="saveBudgets()" style="flex:2;padding:14px;border-radius:14px;background:var(--green);color:#0a0a0f;font-size:14px;font-weight:800;">บันทึกงบประมาณ</button>
         </div>
+      </div>
+    </div>
+  </div>
 
-        <!-- VIEW: ACCOUNTS -->
-        <div id="view-accounts" class="hidden fade-in space-y-4">
-            <div class="flex justify-between items-center px-2">
-                <h3 class="text-xl font-black text-slate-800">จัดการบัญชี</h3>
-                <button onclick="openAccountModal()" class="w-12 h-12 bg-brand-600 text-white rounded-2xl shadow-lg active:scale-90">+</button>
-            </div>
-            <div class="bg-white p-5 rounded-xl3 shadow-sm border border-slate-100">
-                <div class="chart-container"><canvas id="assetChart"></canvas></div>
-            </div>
-            <div id="account-grid" class="space-y-4"></div>
-        </div>
+  <!-- HISTORY -->
+  <div id="v-history" class="fade" style="display:none;">
+    <div style="position:relative;margin-bottom:11px;">
+      <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;">🔍</span>
+      <input type="text" id="srch" class="f" placeholder="ค้นหารายการ..." style="padding-left:38px;" oninput="renderHistory()">
+    </div>
+    <div id="hist-list" style="display:flex;flex-direction:column;gap:5px;"></div>
+  </div>
 
-        <!-- VIEW: BUDGET -->
-        <div id="view-budget" class="hidden fade-in space-y-8">
-            <div class="bg-white p-6 rounded-xl3 shadow-sm border border-slate-200">
-                <h3 class="text-lg font-bold text-brand-700 mb-4 uppercase text-xs tracking-widest">จัดการหมวดหมู่</h3>
+</main>
 
-                <div class="space-y-2 mb-6">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase ml-1">เพิ่มหมวดหมู่หลัก</p>
-                    <div class="flex gap-2">
-                        <select id="new-cat-type" class="p-2 border rounded-xl text-sm bg-slate-50 outline-none">
-                            <option value="expense">จ่าย</option>
-                            <option value="income">รับ</option>
-                        </select>
-                        <input type="text" id="new-cat-name" placeholder="ชื่อหมวดหมู่หลัก..." class="flex-grow p-2 border rounded-xl text-sm outline-none bg-slate-50">
-                        <button onclick="addCategory()" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-bold">+</button>
-                    </div>
-                </div>
+<!-- FAB -->
+<div id="fab" onclick="openTxSheet()">+</div>
 
-                <div class="space-y-2 border-t border-slate-50 pt-4 mb-6">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase ml-1">เพิ่มหมวดหมู่ย่อย</p>
-                    <div class="flex gap-2">
-                        <select id="sub-cat-parent-select" class="flex-1 p-2 border rounded-xl text-sm bg-slate-50 outline-none"></select>
-                        <input type="text" id="new-sub-cat-name" placeholder="ชื่อหมวดหมู่ย่อย..." class="flex-grow p-2 border rounded-xl text-sm outline-none bg-slate-50">
-                        <button onclick="addSubCategory()" class="px-4 py-2 bg-brand-700 text-white rounded-xl text-sm font-bold">+</button>
-                    </div>
-                </div>
+<!-- NAV -->
+<nav id="nav">
+  <button class="nb on" id="nb-home"     onclick="switchTab('home')">    <span class="nb-icon">🏠</span><span class="nb-lbl">หน้าแรก</span></button>
+  <button class="nb"    id="nb-accounts" onclick="switchTab('accounts')"><span class="nb-icon">💳</span><span class="nb-lbl">บัญชี</span></button>
+  <button class="nb"    id="nb-budget"   onclick="switchTab('budget')">  <span class="nb-icon">📊</span><span class="nb-lbl">แผนงาน</span></button>
+  <button class="nb"    id="nb-history"  onclick="switchTab('history')"> <span class="nb-icon">🕒</span><span class="nb-lbl">ประวัติ</span></button>
+</nav>
 
-                <div class="space-y-6">
-                    <div>
-                        <p class="text-[10px] font-bold text-rose-400 mb-3 uppercase tracking-widest">รายจ่าย</p>
-                        <div id="cat-list-expense" class="space-y-3"></div>
-                    </div>
-                    <div>
-                        <p class="text-[10px] font-bold text-emerald-400 mb-3 uppercase tracking-widest">รายรับ</p>
-                        <div id="cat-list-income" class="space-y-3"></div>
-                    </div>
-                </div>
-            </div>
+<!-- ════ TX SHEET ════ -->
+<div class="overlay" id="tx-ov" onclick="closeTxSheet()"></div>
+<div class="sheet"   id="tx-sh">
+  <div class="handle"></div>
+  <div style="padding:0 15px 20px;">
 
-            <div class="bg-white p-6 rounded-xl3 shadow-sm border border-slate-200">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-brand-700 uppercase text-xs tracking-widest">ตั้งงบประมาณ: <span id="editing-month-name" class="text-slate-400"></span></h3>
-                    <button onclick="copyPrevMonthBudget()" class="text-[9px] font-bold text-brand-600 underline uppercase">คัดลอกจากเดือนก่อน</button>
-                </div>
-                <div class="flex gap-2 overflow-x-auto pb-4 custom-scroll no-scrollbar" id="budget-month-selector"></div>
-                <div id="budget-editor-income" class="space-y-6 border-b border-slate-100 pb-6"></div>
-                <div id="budget-editor-expense" class="space-y-6 pt-6"></div>
-                <button onclick="saveBudgets()" class="w-full mt-8 py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-all">บันทึกงบประมาณ</button>
-            </div>
-        </div>
-
-        <!-- VIEW: HISTORY -->
-        <div id="view-history" class="hidden fade-in space-y-4">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                <input type="text" id="filter-search" placeholder="ค้นหาประวัติ..." class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none" oninput="renderHistory()">
-            </div>
-            <div id="history-container" class="space-y-3"></div>
-        </div>
-    </main>
-
-    <!-- Bottom Nav -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 flex justify-around items-center h-20 bottom-nav px-2 z-50">
-        <button onclick="switchTab('overview')" id="nav-overview" class="nav-item active flex flex-col items-center gap-1 transition-all"><div class="icon-bg p-2 text-xl">🏠</div><span class="text-[10px] font-bold uppercase tracking-tighter">หน้าแรก</span></button>
-        <button onclick="switchTab('accounts')" id="nav-accounts" class="nav-item flex flex-col items-center gap-1 transition-all"><div class="icon-bg p-2 text-xl">💳</div><span class="text-[10px] font-bold uppercase tracking-tighter">บัญชี</span></button>
-        <button onclick="switchTab('budget')"   id="nav-budget"   class="nav-item flex flex-col items-center gap-1 transition-all"><div class="icon-bg p-2 text-xl">📊</div><span class="text-[10px] font-bold uppercase tracking-tighter">แผนงาน</span></button>
-        <button onclick="switchTab('history')"  id="nav-history"  class="nav-item flex flex-col items-center gap-1 transition-all"><div class="icon-bg p-2 text-xl">🕒</div><span class="text-[10px] font-bold uppercase tracking-tighter">ประวัติ</span></button>
-    </nav>
-
-    <!-- Account Modal -->
-    <div id="account-modal" class="hidden fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-6 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl">
-            <h3 class="text-xl font-black mb-6 text-center text-slate-800 uppercase tracking-tighter leading-none">จัดการบัญชี</h3>
-            <div class="space-y-4">
-                <input type="text" id="new-acc-name" placeholder="ชื่อบัญชี..." class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
-                <select id="new-acc-type" class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
-                    <option value="asset">ทรัพย์สิน/เงินสด</option>
-                    <option value="investment">การลงทุน</option>
-                    <option value="debt">หนี้สิน (ยืมเงิน)</option>
-                </select>
-                <input type="number" id="new-acc-balance" placeholder="ยอดเงินปัจจุบัน..." class="w-full p-4 border rounded-2xl text-sm outline-none bg-slate-50">
-            </div>
-            <div class="flex gap-2 mt-8">
-                <button onclick="saveAccount()" class="flex-1 py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-lg active:scale-95">บันทึก</button>
-                <button onclick="closeAccountModal()" class="flex-1 py-4 bg-slate-100 text-slate-400 font-bold rounded-2xl">ปิด</button>
-            </div>
-        </div>
+    <!-- Edit badge -->
+    <div id="edit-badge" style="display:none;text-align:center;margin-bottom:6px;">
+      <span style="font-size:10px;font-weight:700;background:rgba(255,183,77,.15);color:var(--amber);border:1px solid rgba(255,183,77,.3);padding:3px 10px;border-radius:20px;letter-spacing:.06em;">✏️ EDITING</span>
     </div>
 
-    <script>
-    // ============================================================
-    // ⚙️  CONFIG & STATE
-    // ============================================================
-    // NOTE: Supabase anon key is intentionally public (Supabase design)
-    // IMPORTANT: Enable Row Level Security (RLS) on ALL tables in
-    // your Supabase dashboard to prevent unauthorised access.
-    // See: https://supabase.com/docs/guides/auth/row-level-security
-    const SUPABASE_URL = "https://xyotqopwkcxblapoaiae.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5b3Rxb3B3a2N4YmxhcG9haWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MDI0ODMsImV4cCI6MjA5MTQ3ODQ4M30.qNBaRDz9WGAXxX0tUcBLoMg6yA4Jz4EypTT_TJuZzkk";
+    <!-- Type tabs -->
+    <div class="ttabs" style="margin-bottom:4px;">
+      <button class="tt e" onclick="setType('expense')"  id="tt-e">💸 จ่าย</button>
+      <button class="tt"   onclick="setType('income')"   id="tt-i">💰 รับ</button>
+      <button class="tt"   onclick="setType('transfer')" id="tt-t">↔️ โอน</button>
+    </div>
 
-    // FIX #11: VERSION-based localStorage migration
-    // ── เปลี่ยน VERSION เมื่อ schema เปลี่ยน แล้วทำ migrate ข้อมูลเก่า
-    const CURRENT_VERSION = "v101_smart_budget";
-    const ST_ACCS    = `ws_accs_${CURRENT_VERSION}`;
-    const ST_TXS     = `ws_txs_${CURRENT_VERSION}`;
-    const ST_CATS    = `ws_cats_${CURRENT_VERSION}`;
-    const ST_BUDGETS = `ws_budgets_${CURRENT_VERSION}`;
+    <!-- Amount -->
+    <div class="amt e" id="amt-disp">฿0</div>
+    <div id="amt-hint" style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:10px;min-height:14px;"></div>
 
-    // ── ดึงข้อมูลจาก localStorage พร้อม fallback
-    let supabaseClient = null;
-    let isSyncActive = localStorage.getItem('ws_sync_active') !== 'false';
+    <!-- Numpad -->
+    <div class="numpad" style="margin-bottom:15px;">
+      <div class="nk" onclick="nk('1')">1</div><div class="nk" onclick="nk('2')">2</div><div class="nk" onclick="nk('3')">3</div>
+      <div class="nk" onclick="nk('4')">4</div><div class="nk" onclick="nk('5')">5</div><div class="nk" onclick="nk('6')">6</div>
+      <div class="nk" onclick="nk('7')">7</div><div class="nk" onclick="nk('8')">8</div><div class="nk" onclick="nk('9')">9</div>
+      <div class="nk" onclick="nk('.')">.</div><div class="nk" onclick="nk('0')">0</div><div class="nk del" onclick="ndel()">⌫</div>
+    </div>
 
-    let CATEGORIES = JSON.parse(localStorage.getItem(ST_CATS)) || [
-        { id: 1, name: 'เงินเดือน', type: 'income',  parent_id: null },
-        { id: 2, name: 'อาหาร',     type: 'expense', parent_id: null },
-        { id: 3, name: 'อื่นๆ',     type: 'expense', parent_id: null }
-    ];
-    let accounts     = JSON.parse(localStorage.getItem(ST_ACCS))    || [{ id: 1, name: 'เงินสด', type: 'asset', balance: 0 }];
-    let transactions = JSON.parse(localStorage.getItem(ST_TXS))     || [];
-    let annualBudgets= JSON.parse(localStorage.getItem(ST_BUDGETS)) || {};
+    <!-- Accounts row -->
+    <div id="acc-row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px;">
+      <div>
+        <div class="fl">ต้นทาง</div>
+        <select id="f-from" class="f" style="padding:10px 12px;"></select>
+      </div>
+      <div id="to-wrap" style="display:none;">
+        <div class="fl">ปลายทาง</div>
+        <select id="f-to" class="f" style="padding:10px 12px;"></select>
+      </div>
+      <div id="date-wrap">
+        <div class="fl">วันที่</div>
+        <input type="date" id="f-date" class="f" style="padding:10px 12px;">
+      </div>
+    </div>
 
-    let editingTxId      = null;
-    let editingAccountId = null;
-    let selectedBudgetMonth = new Date().getMonth();
-    let assetChart = null;
+    <!-- Category -->
+    <div id="cat-sec">
+      <div class="fl" style="margin-bottom:7px;">หมวดหมู่</div>
+      <div id="cg-main" class="cgrid" style="margin-bottom:9px;"></div>
+      <div id="sub-sec" style="display:none;">
+        <div class="fl" style="margin-bottom:7px;">หมวดหมู่ย่อย</div>
+        <div id="cg-sub" class="cgrid" style="margin-bottom:9px;"></div>
+      </div>
+    </div>
 
-    const MONTHS_LIST = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
-                         'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+    <!-- Note -->
+    <input type="text" id="f-note" class="f" placeholder="📝 บันทึกช่วยจำ (ไม่บังคับ)" style="margin-bottom:13px;">
 
-    // ============================================================
-    // 1. CORE UTILITIES
-    // ============================================================
+    <!-- Actions -->
+    <div style="display:flex;gap:7px;">
+      <button id="cancel-btn" onclick="closeTxSheet()" style="display:none;flex:1;padding:14px;border-radius:13px;background:var(--bg3);border:1px solid var(--border);font-size:13px;font-weight:700;color:var(--muted);">ยกเลิก</button>
+      <button id="save-btn" onclick="handleTx()" class="btn-g" style="flex:2;">บันทึก</button>
+    </div>
+  </div>
+</div>
 
-    function todayStr() {
-        // FIX #5: date format เป็น YYYY-MM-DD เสมอ
-        return new Date().toISOString().split('T')[0];
+<!-- ════ ACCOUNT SHEET ════ -->
+<div class="overlay" id="ac-ov" onclick="closeAccSheet()"></div>
+<div class="sheet"   id="ac-sh">
+  <div class="handle"></div>
+  <div style="padding:0 15px 20px;">
+    <div style="font-size:18px;font-weight:900;margin-bottom:16px;" id="ac-title">เพิ่มบัญชี</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+      <div>
+        <div class="fl">ชื่อบัญชี</div>
+        <input type="text" id="a-name" class="f" placeholder="เช่น เงินสด, กสิกรไทย...">
+      </div>
+      <div>
+        <div class="fl" style="margin-bottom:7px;">ประเภทบัญชี</div>
+        <div class="ttabs">
+          <button onclick="setAccType('asset')"      id="at-asset"      class="tt i" style="font-size:12px;">💰 ทรัพย์สิน</button>
+          <button onclick="setAccType('investment')" id="at-investment" class="tt"  style="font-size:12px;">📈 ลงทุน</button>
+          <button onclick="setAccType('debt')"       id="at-debt"       class="tt"  style="font-size:12px;">💳 หนี้สิน</button>
+        </div>
+        <input type="hidden" id="a-type" value="asset">
+      </div>
+      <div>
+        <div class="fl">ยอดเงินปัจจุบัน</div>
+        <input type="number" id="a-bal" class="f" placeholder="0.00">
+      </div>
+    </div>
+    <div style="display:flex;gap:7px;">
+      <button onclick="closeAccSheet()" class="btn-ghost" style="flex:1;">ปิด</button>
+      <button onclick="saveAcc()"       class="btn-g"     style="flex:2;">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+const SB_URL = "https://xyotqopwkcxblapoaiae.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5b3Rxb3B3a2N4YmxhcG9haWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MDI0ODMsImV4cCI6MjA5MTQ3ODQ4M30.qNBaRDz9WGAXxX0tUcBLoMg6yA4Jz4EypTT_TJuZzkk";
+// ⚠️ TODO: Enable Row Level Security on ALL Supabase tables
+
+const VER = "v101_smart_budget";
+const KEY = { A:`ws_accs_${VER}`, T:`ws_txs_${VER}`, C:`ws_cats_${VER}`, B:`ws_budgets_${VER}` };
+
+let db = null;
+let syncOn = localStorage.getItem('ws_sync') !== 'false';
+
+const EMOJI = {
+  'เงินเดือน':'💼','โบนัส':'🎁','รายได้เสริม':'💡','ดอกเบี้ย':'🏦',
+  'อาหาร':'🍜','ช้อปปิ้ง':'🛍️','เดินทาง':'🚗','ท่องเที่ยว':'✈️',
+  'สุขภาพ':'💊','บันเทิง':'🎬','บ้าน':'🏠','ค่าน้ำไฟ':'⚡',
+  'การศึกษา':'📚','ออมทรัพย์':'🏦','ลงทุน':'📈','โอนเงิน':'↔️',
+  'อื่นๆ':'📦','โทรศัพท์':'📱','อินเตอร์เน็ต':'🌐','ประกัน':'🛡️'
+};
+const emo = n => EMOJI[n] || (n?.[0]?.toUpperCase()||'•');
+
+let CATS = JSON.parse(localStorage.getItem(KEY.C)) || [
+  {id:1,name:'เงินเดือน',type:'income', parent_id:null},
+  {id:2,name:'อาหาร',    type:'expense',parent_id:null},
+  {id:3,name:'ช้อปปิ้ง', type:'expense',parent_id:null},
+  {id:4,name:'เดินทาง',  type:'expense',parent_id:null},
+  {id:5,name:'สุขภาพ',   type:'expense',parent_id:null},
+  {id:6,name:'บ้าน',     type:'expense',parent_id:null},
+  {id:7,name:'อื่นๆ',    type:'expense',parent_id:null},
+];
+let accs  = JSON.parse(localStorage.getItem(KEY.A)) || [{id:1,name:'เงินสด',type:'asset',balance:0}];
+let txs   = JSON.parse(localStorage.getItem(KEY.T)) || [];
+let buds  = JSON.parse(localStorage.getItem(KEY.B)) || {};
+
+let editId  = null, editAccId = null;
+let selMon  = new Date().getMonth();
+let chart   = null;
+let manOpen = false;
+let nStr    = '';
+let selCat  = '', selSub = '';
+let txType  = 'expense';
+
+const MONTHS_S = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const MONTHS_F = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+const today = () => new Date().toISOString().split('T')[0];
+const fmt  = (n,d=0) => parseFloat(n||0).toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtS = n => { const v=Math.abs(parseFloat(n||0)); return v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(1)+'K':v.toFixed(0); };
+
+function toast(msg, type='err') {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className=`on ${type}`;
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('on'),2600);
+}
+function setLoad(s,t=''){
+  document.getElementById('load').style.display=s?'flex':'none';
+  if(t) document.getElementById('load-txt').textContent=t;
+}
+
+// ═══════════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════════
+async function initDB() {
+  if (typeof supabase==='undefined') return;
+  try { db=supabase.createClient(SB_URL,SB_KEY); if(syncOn) await pullCloud(); } catch(e){console.error(e);}
+}
+async function pullCloud() {
+  if (!db||!syncOn) return;
+  setLoad(true,'ซิงค์ข้อมูล...');
+  try {
+    const [ra,rt,rc,rb] = await Promise.all([
+      db.from('accounts').select('*'),
+      db.from('transactions').select('*').order('date',{ascending:false}),
+      db.from('categories').select('*'),
+      db.from('budgets').select('*')
+    ]);
+    if(ra.data?.length) accs=ra.data;
+    if(rt.data)         txs =rt.data;
+    if(rc.data?.length) CATS=rc.data;
+    if(rb.data)         rb.data.forEach(r=>{buds[parseInt(r.month_key)]=r.data;});
+    save();
+  } catch(e){console.error(e);toast('ดึง Cloud ไม่สำเร็จ');}
+  setLoad(false);
+}
+async function push(table,data) {
+  if (!db||!syncOn) return;
+  try { await db.from(table).upsert(data); } catch(e){console.error(e);}
+}
+
+// ═══════════════════════════════════════════
+// NUMPAD
+// ═══════════════════════════════════════════
+function nk(c) {
+  if (c==='.'&&nStr.includes('.')) return;
+  if (c==='.'&&!nStr) nStr='0';
+  if (nStr.includes('.')&&nStr.split('.')[1]?.length>=2) return;
+  if (nStr.length>=10) return;
+  nStr+=c; updAmt();
+}
+function ndel() { nStr=nStr.slice(0,-1); updAmt(); }
+function nClear() { nStr=''; updAmt(); }
+function nVal() { return parseFloat(nStr)||0; }
+function updAmt() {
+  const el=document.getElementById('amt-disp');
+  el.textContent = nStr?'฿'+nStr:'฿0';
+  el.className = `amt ${txType[0]}`;
+}
+
+// ═══════════════════════════════════════════
+// CATEGORY GRID
+// ═══════════════════════════════════════════
+function buildCatGrid(type) {
+  const main = CATS.filter(c=>c.type===type&&!c.parent_id);
+  selCat=''; selSub='';
+  document.getElementById('sub-sec').style.display='none';
+  document.getElementById('cg-main').innerHTML = main.map(c=>`
+    <div class="cc" onclick="pickCat('${esc(c.name)}',${c.id})" id="cc-${c.id}">
+      <span class="cc-emoji">${emo(c.name)}</span>
+      <span class="cc-name">${c.name}</span>
+    </div>`).join('');
+}
+function esc(s){return s.replace(/'/g,"\\'")}
+function pickCat(name,id) {
+  selCat=name; selSub='';
+  document.querySelectorAll('#cg-main .cc').forEach(el=>el.classList.remove('sel'));
+  document.getElementById('cc-'+id)?.classList.add('sel');
+  const subs=CATS.filter(c=>c.parent_id===id);
+  const ss=document.getElementById('sub-sec');
+  if(subs.length){
+    document.getElementById('cg-sub').innerHTML=subs.map(s=>`
+      <div class="cc" onclick="pickSub('${esc(s.name)}',${s.id})" id="sc-${s.id}">
+        <span class="cc-emoji">${emo(s.name)}</span>
+        <span class="cc-name">${s.name}</span>
+      </div>`).join('');
+    ss.style.display='block';
+  } else {ss.style.display='none';}
+}
+function pickSub(name,id){
+  selSub=name;
+  document.querySelectorAll('#cg-sub .cc').forEach(el=>el.classList.remove('sel'));
+  document.getElementById('sc-'+id)?.classList.add('sel');
+}
+
+// ═══════════════════════════════════════════
+// TX SHEET
+// ═══════════════════════════════════════════
+function openTxSheet(eid=null) {
+  editId=eid; nClear();
+  const opts=accs.map(a=>`<option value="${a.id}">${a.name} ฿${fmt(a.balance)}</option>`).join('');
+  document.getElementById('f-from').innerHTML=opts;
+  document.getElementById('f-to').innerHTML=opts;
+  document.getElementById('f-date').value=today();
+  document.getElementById('f-note').value='';
+
+  if(eid){
+    const t=txs.find(t=>t.id===eid); if(!t)return;
+    nStr=String(t.amount);
+    document.getElementById('f-date').value=t.date?.split('T')[0]||today();
+    document.getElementById('f-note').value=t.note||'';
+    const fa=t.from_id?accs.find(a=>a.id===t.from_id):accs.find(a=>a.name===t.from);
+    if(fa) document.getElementById('f-from').value=fa.id;
+    if(t.to_id||t.to){
+      const ta=t.to_id?accs.find(a=>a.id===t.to_id):accs.find(a=>a.name===t.to);
+      if(ta) document.getElementById('f-to').value=ta.id;
     }
-
-    function populateSelectors() {
-        const opts = accounts
-            .map(a => `<option value="${a.id}">${a.name} (฿${parseFloat(a.balance).toLocaleString()})</option>`)
-            .join('');
-
-        const fromEl = document.getElementById('from-account');
-        const toEl   = document.getElementById('to-account');
-        const catEl  = document.getElementById('tx-category');
-
-        if (fromEl) fromEl.innerHTML = opts;
-        if (toEl)   toEl.innerHTML   = opts;
-
-        const currentType = document.getElementById('tx-type')?.value || 'expense';
-        // transfer ไม่ใช้ category ปกติ ซ่อน dropdown ไว้
-        const mainCats = CATEGORIES.filter(c => c.type === currentType && c.parent_id === null);
-        if (catEl) {
-            catEl.innerHTML = mainCats
-                .map(c => `<option value="${c.name}" data-id="${c.id}">${c.name}</option>`)
-                .join('');
-            populateSubSelectors();
-        }
-
-        const parentSelect = document.getElementById('sub-cat-parent-select');
-        if (parentSelect) {
-            const allMainCats = CATEGORIES.filter(c => c.parent_id === null);
-            parentSelect.innerHTML = allMainCats
-                .map(c => `<option value="${c.id}">${c.name} (${c.type === 'income' ? 'รับ' : 'จ่าย'})</option>`)
-                .join('');
-        }
+    document.getElementById('save-btn').textContent='อัปเดต';
+    document.getElementById('cancel-btn').style.display='block';
+    document.getElementById('edit-badge').style.display='block';
+    document.getElementById('fab').classList.add('editing');
+    setType(t.type);
+    // pre-select category
+    if(t.type!=='transfer'){
+      const cat=CATS.find(c=>c.name===t.category&&!c.parent_id);
+      if(cat){ setTimeout(()=>{
+        pickCat(cat.name,cat.id);
+        if(t.sub_category){const sc=CATS.find(c=>c.name===t.sub_category);if(sc)pickSub(sc.name,sc.id);}
+      },50);}
     }
+  } else {
+    document.getElementById('save-btn').textContent='บันทึก';
+    document.getElementById('cancel-btn').style.display='none';
+    document.getElementById('edit-badge').style.display='none';
+    document.getElementById('fab').classList.remove('editing');
+    setType('expense');
+  }
+  updAmt();
+  document.getElementById('tx-ov').classList.add('on');
+  document.getElementById('tx-sh').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function closeTxSheet(){
+  editId=null;
+  ['tx-ov','tx-sh'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById('fab').classList.remove('editing');
+  document.body.style.overflow='';
+  nClear();
+}
+function setType(t){
+  txType=t;
+  ['e','i','t'].forEach(x=>{
+    const b=document.getElementById('tt-'+x);
+    b.className='tt';
+  });
+  document.getElementById('tt-'+t[0]).className='tt '+t[0];
+  document.getElementById('to-wrap').style.display=t==='transfer'?'block':'none';
+  document.getElementById('cat-sec').style.display=t==='transfer'?'none':'block';
+  updAmt();
+  if(t!=='transfer') buildCatGrid(t);
+}
 
-    function populateSubSelectors() {
-        const catEl    = document.getElementById('tx-category');
-        const subCatEl = document.getElementById('tx-sub-category');
-        if (!catEl || !subCatEl) return;
+// ═══════════════════════════════════════════
+// BUSINESS LOGIC
+// ═══════════════════════════════════════════
+function revert(id){
+  const t=txs.find(t=>t.id===id); if(!t)return;
+  const fa=accs.find(a=>a.name===t.from);
+  const ta=t.to?accs.find(a=>a.name===t.to):null;
+  if(t.type==='expense'){if(fa)fa.balance+=parseFloat(t.amount);}
+  else if(t.type==='income'){if(fa)fa.balance-=parseFloat(t.amount);}
+  else{if(fa)fa.balance+=parseFloat(t.amount);if(ta)ta.balance-=parseFloat(t.amount);}
+}
 
-        const selectedOption = catEl.options[catEl.selectedIndex];
-        const parentId = selectedOption ? parseInt(selectedOption.getAttribute('data-id')) : null;
+async function handleTx(){
+  const amount=nVal();
+  if(!amount||amount<=0)return toast('กรุณากรอกจำนวนเงิน');
+  if(txType!=='transfer'&&!selCat)return toast('กรุณาเลือกหมวดหมู่');
+  const fromId=parseInt(document.getElementById('f-from').value);
+  const fromAcc=accs.find(a=>a.id===fromId);
+  if(!fromAcc)return toast('ไม่พบบัญชีต้นทาง');
 
-        if (parentId) {
-            const subCats = CATEGORIES.filter(c => c.parent_id === parentId);
-            if (subCats.length > 0) {
-                subCatEl.innerHTML = '<option value="">-- เลือก --</option>' +
-                    subCats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-                subCatEl.disabled = false;
-            } else {
-                subCatEl.innerHTML = '<option value="">ไม่มีหมวดหมู่ย่อย</option>';
-                subCatEl.disabled = true;
-            }
-        } else {
-            subCatEl.innerHTML = '<option value="">ไม่มีหมวดหมู่ย่อย</option>';
-            subCatEl.disabled = true;
-        }
+  // balance check
+  if(txType!=='income'&&fromAcc.type!=='debt'){
+    const chk=editId?fromAcc.balance+(txs.find(t=>t.id===editId)?.amount||0):fromAcc.balance;
+    if(amount>chk)return toast('ยอดเงินในบัญชีไม่เพียงพอ');
+  }
+  if(editId) revert(editId);
+
+  const newTx={
+    id:editId||Date.now(), type:txType, amount,
+    from:fromAcc.name, from_id:fromAcc.id,
+    category: txType==='transfer'?'โอนเงิน':selCat,
+    sub_category: selSub||null,
+    note: document.getElementById('f-note').value.trim()||'',
+    date: document.getElementById('f-date').value||today()
+  };
+
+  if(txType==='transfer'){
+    const toId=parseInt(document.getElementById('f-to').value);
+    const toAcc=accs.find(a=>a.id===toId);
+    if(!toAcc)return toast('ไม่พบบัญชีปลายทาง');
+    if(toAcc.id===fromId)return toast('บัญชีต้นทางและปลายทางต้องต่างกัน');
+    fromAcc.balance-=amount; toAcc.balance+=amount;
+    newTx.to=toAcc.name; newTx.to_id=toAcc.id;
+    await push('accounts',fromAcc); await push('accounts',toAcc);
+  } else if(txType==='expense'){
+    fromAcc.balance-=amount; await push('accounts',fromAcc);
+  } else {
+    fromAcc.balance+=amount; await push('accounts',fromAcc);
+  }
+
+  if(editId){const i=txs.findIndex(t=>t.id===editId);if(i!==-1)txs[i]=newTx;}
+  else txs.unshift(newTx);
+  await push('transactions',newTx);
+  closeTxSheet(); renderAll();
+  toast(editId?'อัปเดตสำเร็จ ✓':'บันทึกสำเร็จ ✓','ok');
+}
+
+async function delTx(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  const t=txs.find(t=>t.id===id);
+  revert(id); txs=txs.filter(t=>t.id!==id);
+  if(db&&syncOn){
+    await db.from('transactions').delete().eq('id',id);
+    if(t){
+      const fa=accs.find(a=>a.name===t.from);
+      const ta=t.to?accs.find(a=>a.name===t.to):null;
+      if(fa) await push('accounts',fa);
+      if(ta) await push('accounts',ta);
     }
+  }
+  renderAll();
+}
+function editTx(id){ closeTxSheet(); setTimeout(()=>openTxSheet(id),120); }
 
-    function updateCalculations() {
-        const netWorthTotal = accounts.reduce((s, a) => s + parseFloat(a.balance), 0);
-        const now  = new Date();
-        const curM = now.getMonth();
-        const curY = now.getFullYear();
+// Account
+function setAccType(t){
+  document.getElementById('a-type').value=t;
+  document.getElementById('at-asset').className      ='tt'+(t==='asset'     ?' i':'');
+  document.getElementById('at-investment').className ='tt'+(t==='investment'?' t':'');
+  document.getElementById('at-debt').className       ='tt'+(t==='debt'      ?' e':'');
+}
+function openAccSheet(id=null){
+  editAccId=id;
+  document.getElementById('ac-title').textContent=id?'แก้ไขบัญชี':'เพิ่มบัญชี';
+  if(id){
+    const a=accs.find(a=>a.id===id); if(!a)return;
+    document.getElementById('a-name').value=a.name;
+    document.getElementById('a-bal').value=a.balance;
+    setAccType(a.type);
+  }else{
+    document.getElementById('a-name').value='';
+    document.getElementById('a-bal').value='';
+    setAccType('asset');
+  }
+  ['ac-ov','ac-sh'].forEach(x=>document.getElementById(x).classList.add('on'));
+  document.body.style.overflow='hidden';
+}
+function closeAccSheet(){
+  ['ac-ov','ac-sh'].forEach(x=>document.getElementById(x).classList.remove('on'));
+  document.body.style.overflow=''; editAccId=null;
+}
+async function saveAcc(){
+  const name=document.getElementById('a-name').value.trim();
+  const type=document.getElementById('a-type').value;
+  const bal =parseFloat(document.getElementById('a-bal').value)||0;
+  if(!name)return toast('กรุณากรอกชื่อบัญชี');
+  if(accs.find(a=>a.name===name&&a.id!==editAccId))return toast('ชื่อบัญชีนี้มีอยู่แล้ว');
+  let acc;
+  if(editAccId){const i=accs.findIndex(a=>a.id===editAccId);accs[i]={...accs[i],name,type,balance:bal};acc=accs[i];}
+  else{acc={id:Date.now(),name,type,balance:bal};accs.push(acc);}
+  await push('accounts',acc);
+  closeAccSheet(); renderAll();
+  toast('บันทึกบัญชีสำเร็จ ✓','ok');
+}
 
-        const monthlyTxs = transactions.filter(t => {
-            // FIX #5: date อาจเป็น "YYYY-MM-DD" หรือ ISO string — normalize ก่อน
-            const d = new Date(t.date);
-            return d.getMonth() === curM && d.getFullYear() === curY;
-        });
+// Categories
+async function addCategory(){
+  const name=document.getElementById('new-cat-name').value.trim();
+  const type=document.getElementById('new-cat-type').value;
+  if(!name)return toast('กรุณากรอกชื่อหมวดหมู่');
+  if(CATS.some(c=>c.name===name&&!c.parent_id&&c.type===type))return toast('หมวดหมู่นี้มีอยู่แล้ว');
+  const cat={id:Date.now(),name,type,parent_id:null};
+  CATS.push(cat); await push('categories',cat);
+  document.getElementById('new-cat-name').value='';
+  renderAll(); renderCatList();
+}
+async function addSubCat(){
+  const name=document.getElementById('new-sub-name').value.trim();
+  const pid=parseInt(document.getElementById('sub-parent').value);
+  if(!name)return toast('กรุณากรอกชื่อหมวดหมู่ย่อย');
+  const parent=CATS.find(c=>c.id===pid); if(!parent)return;
+  if(CATS.some(c=>c.name===name&&c.parent_id===pid))return toast('หมวดหมู่ย่อยนี้มีอยู่แล้ว');
+  const cat={id:Date.now(),name,type:parent.type,parent_id:pid};
+  CATS.push(cat); await push('categories',cat);
+  document.getElementById('new-sub-name').value='';
+  renderAll(); renderCatList();
+}
+// FIX#1: ลบ parent + subs ทั้งหมด
+async function delCat(id){
+  const cat=CATS.find(c=>c.id===id);
+  if(!cat||!confirm(`ลบ "${cat.name}" และหมวดหมู่ย่อยทั้งหมด?`))return;
+  const all=[id,...CATS.filter(c=>c.parent_id===id).map(c=>c.id)];
+  CATS=CATS.filter(c=>!all.includes(c.id));
+  if(db&&syncOn) await db.from('categories').delete().in('id',all);
+  renderAll(); renderCatList();
+}
+async function delSub(id){
+  const cat=CATS.find(c=>c.id===id);
+  if(!cat||!confirm(`ลบ "${cat.name}"?`))return;
+  CATS=CATS.filter(c=>c.id!==id);
+  if(db&&syncOn) await db.from('categories').delete().eq('id',id);
+  renderAll(); renderCatList();
+}
 
-        const inc = monthlyTxs.filter(t => t.type === 'income') .reduce((s, t) => s + parseFloat(t.amount), 0);
-        const exp = monthlyTxs.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0);
-        const actualNet = inc - exp;
+// Budget
+function copyPrev(){
+  const p=selMon===0?11:selMon-1;
+  if(buds[p]&&Object.keys(buds[p]).length){
+    buds[selMon]={...buds[p]};
+    renderBudEditor(); renderCalcs();
+    toast(`คัดลอกจาก ${MONTHS_F[p]} ✓`,'ok');
+  } else toast(`ยังไม่มีข้อมูลของ ${MONTHS_F[p]}`);
+}
+async function saveBudgets(){
+  const data={};
+  document.querySelectorAll('.bi').forEach(i=>{data[i.dataset.c]=parseFloat(i.value)||0;});
+  buds[selMon]=data;
+  if(db&&syncOn) await db.from('budgets').upsert({month_key:String(selMon),data});
+  save(); renderCalcs(); renderBudProgress();
+  toast('บันทึกงบประมาณสำเร็จ ✓','ok');
+}
 
-        const nwEl = document.getElementById('display-net-worth');
-        if (nwEl) {
-            nwEl.innerText = `฿ ${netWorthTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-            nwEl.style.color = netWorthTotal < 0 ? '#f43f5e' : '#047857';
-        }
-
-        const acEl = document.getElementById('display-cash-flow');
-        if (acEl) {
-            acEl.innerText = `฿ ${actualNet.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-            acEl.style.color = actualNet < 0 ? '#f43f5e' : '#059669';
-        }
-
-        // Plan Net
-        const planData = annualBudgets[selectedBudgetMonth] || {};
-        let pInc = 0, pExp = 0;
-        CATEGORIES.forEach(c => {
-            const hasSubs = CATEGORIES.some(sc => sc.parent_id === c.id);
-            const isMainWithoutSubs = c.parent_id === null && !hasSubs;
-            const isSub = c.parent_id !== null;
-            if (isMainWithoutSubs || isSub) {
-                const val = parseFloat(planData[c.name] || 0);
-                if (c.type === 'income') pInc += val;
-                else pExp += val;
-            }
-        });
-        const planNet = pInc - pExp;
-        const plEl = document.getElementById('display-plan-net');
-        if (plEl) {
-            plEl.innerText = `฿ ${planNet.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-            plEl.style.color = planNet < 0 ? '#f43f5e' : '#047857';
-        }
-
-        if (document.getElementById('m-income-val'))  document.getElementById('m-income-val').innerText  = `฿ ${inc.toLocaleString()}`;
-        if (document.getElementById('m-expense-val')) document.getElementById('m-expense-val').innerText = `฿ ${exp.toLocaleString()}`;
-        const netValEl = document.getElementById('m-net-val');
-        if (netValEl) {
-            netValEl.innerText   = `฿ ${actualNet.toLocaleString()}`;
-            netValEl.style.color = actualNet < 0 ? '#f43f5e' : '#059669';
-        }
+// ═══════════════════════════════════════════
+// CALCULATIONS
+// ═══════════════════════════════════════════
+function calcMon(m,y){
+  const t=txs.filter(t=>{const d=new Date(t.date);return d.getMonth()===m&&d.getFullYear()===y;});
+  const inc=t.filter(t=>t.type==='income') .reduce((s,t)=>s+parseFloat(t.amount),0);
+  const exp=t.filter(t=>t.type==='expense').reduce((s,t)=>s+parseFloat(t.amount),0);
+  return{inc,exp,net:inc-exp,txs:t};
+}
+function calcPlan(){
+  const b=buds[selMon]||{}; let pi=0,pe=0;
+  CATS.forEach(c=>{
+    const hasSubs=CATS.some(s=>s.parent_id===c.id);
+    if((!c.parent_id&&!hasSubs)||c.parent_id){
+      const v=parseFloat(b[c.name]||0);
+      if(c.type==='income')pi+=v; else pe+=v;
     }
-
-    function renderAccountGrid() {
-        const grid = document.getElementById('account-grid');
-        if (!grid) return;
-        grid.innerHTML = accounts.map(a => `
-            <div class="bg-white p-5 rounded-2xl border flex justify-between items-center shadow-sm">
-                <div>
-                    <span class="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 tracking-wider">${a.type}</span>
-                    <h4 class="font-bold text-slate-700 mt-1">${a.name}</h4>
-                    <p class="text-xl font-black ${parseFloat(a.balance) < 0 ? 'text-rose-500' : 'text-slate-900'}">฿${parseFloat(a.balance).toLocaleString()}</p>
-                </div>
-                <button onclick="openAccountModal(${a.id})" class="p-3 text-slate-300 hover:text-brand-500 transition-colors">✏️</button>
-            </div>
-        `).join('');
-    }
-
-    function renderHistory() {
-        const container = document.getElementById('history-container');
-        if (!container) return;
-        // FIX #3: guard null note/category ก่อน toLowerCase()
-        const q = (document.getElementById('filter-search')?.value || '').toLowerCase();
-        const filtered = transactions.filter(t =>
-            (t.note         || '').toLowerCase().includes(q) ||
-            (t.category     || '').toLowerCase().includes(q) ||
-            (t.sub_category || '').toLowerCase().includes(q)
-        );
-
-        if (filtered.length === 0) {
-            container.innerHTML = `<div class="text-center py-12 text-slate-300 text-sm font-bold">ยังไม่มีรายการ</div>`;
-            return;
-        }
-
-        container.innerHTML = filtered.map(t => `
-            <div class="bg-white p-4 rounded-2xl border shadow-sm flex justify-between items-center active:bg-slate-50 transition-all" onclick="editTx(${t.id})">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold ${t.type==='income'?'bg-emerald-50 text-emerald-500':'bg-rose-50 text-rose-500'}">
-                        ${t.type==='income'?'💰':t.type==='expense'?'💸':'↔️'}
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-sm text-slate-700 leading-tight">
-                            ${t.category||'—'}${t.sub_category ? ` <span class="text-slate-300 font-normal">›</span> ${t.sub_category}` : ''}
-                        </h4>
-                        <p class="text-[10px] text-slate-400 uppercase font-bold mt-0.5">
-                            ${new Date(t.date).toLocaleDateString('th-TH')} • ${t.from||''}
-                            ${t.note ? '• ' + t.note : ''}
-                        </p>
-                    </div>
-                </div>
-                <div class="text-right shrink-0 ml-2">
-                    <p class="font-black ${t.type==='income'?'text-emerald-600':'text-rose-500'}">฿${parseFloat(t.amount).toLocaleString()}</p>
-                    <button onclick="event.stopPropagation(); deleteTx(${t.id})" class="text-[8px] font-black text-rose-200 uppercase mt-1">ลบรายการ</button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function renderCategoryList() {
-        const expList = document.getElementById('cat-list-expense');
-        const incList = document.getElementById('cat-list-income');
-        if (!expList || !incList) return;
-
-        const buildTree = (type) => {
-            const mainCats = CATEGORIES.filter(c => c.type === type && c.parent_id === null);
-            if (mainCats.length === 0) return `<p class="text-[9px] text-slate-300 italic pl-2">ยังไม่มีหมวดหมู่</p>`;
-            return mainCats.map(m => {
-                const subs = CATEGORIES.filter(c => c.parent_id === m.id);
-                return `
-                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-[11px] font-black uppercase text-slate-600">${m.name}</span>
-                        <button onclick="deleteCategory(${m.id})" class="text-rose-300 text-xs font-bold hover:text-rose-500 transition-colors">ลบ</button>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        ${subs.map(s => `
-                            <div class="px-2 py-0.5 bg-white border border-slate-200 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm">
-                                ${s.name}
-                                <button onclick="deleteCategoryById(${s.id})" class="text-slate-300 hover:text-rose-400">×</button>
-                            </div>
-                        `).join('')}
-                        ${subs.length === 0 ? '<span class="text-[9px] text-slate-300 italic">ยังไม่มีหมวดหมู่ย่อย</span>' : ''}
-                    </div>
-                </div>`;
-            }).join('');
-        };
-
-        expList.innerHTML = buildTree('expense');
-        incList.innerHTML = buildTree('income');
-    }
-
-    function renderBudgetEditor() {
-        const b = annualBudgets[selectedBudgetMonth] || {};
-        const mainCats = CATEGORIES.filter(c => c.parent_id === null);
-
-        const generateHtml = (type) => {
-            let html = `<p class="text-[10px] font-bold ${type==='income'?'text-emerald-500':'text-rose-500'} uppercase mb-4 tracking-widest leading-none">
-                ${type==='income'?'💰 ประมาณการรายรับ':'💸 ประมาณการรายจ่าย'}</p>`;
-
-            const cats = mainCats.filter(c => c.type === type);
-            if (cats.length === 0) {
-                html += `<p class="text-[9px] text-slate-300 italic">ยังไม่มีหมวดหมู่</p>`;
-                return html;
-            }
-
-            cats.forEach(m => {
-                const subs = CATEGORIES.filter(sc => sc.parent_id === m.id);
-                if (subs.length > 0) {
-                    html += `<div class="mb-4">
-                        <p class="text-[9px] font-black text-slate-400 uppercase mb-2 pl-1">${m.name}</p>
-                        <div class="space-y-2 pl-3 border-l-2 border-slate-100">
-                            ${subs.map(s => `
-                                <div class="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
-                                    <label class="flex-grow text-[11px] font-bold text-slate-600">${s.name}</label>
-                                    <div class="relative">
-                                        <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">฿</span>
-                                        <input type="number" min="0" oninput="updateCalculations()"
-                                            data-cat="${s.name}" value="${b[s.name] || 0}"
-                                            class="budget-input w-28 pl-5 pr-2 py-1 bg-slate-50 border rounded-xl text-right text-xs font-black outline-none focus:border-brand-500">
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>`;
-                } else {
-                    html += `
-                    <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100 mb-4">
-                        <label class="flex-grow text-[11px] font-bold text-slate-600 uppercase leading-none">${m.name}</label>
-                        <div class="relative">
-                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">฿</span>
-                            <input type="number" min="0" oninput="updateCalculations()"
-                                data-cat="${m.name}" value="${b[m.name] || 0}"
-                                class="budget-input w-28 pl-5 pr-2 py-1 bg-white border rounded-xl text-right text-xs font-black outline-none focus:border-brand-500">
-                        </div>
-                    </div>`;
-                }
-            });
-            return html;
-        };
-
-        const incEd = document.getElementById('budget-editor-income');
-        const expEd = document.getElementById('budget-editor-expense');
-        if (incEd) incEd.innerHTML = generateHtml('income');
-        if (expEd) expEd.innerHTML = generateHtml('expense');
-    }
-
-    function renderMonthSelector() {
-        const sel = document.getElementById('budget-month-selector');
-        if (!sel) return;
-        sel.innerHTML = MONTHS_LIST.map((m, i) => `
-            <button onclick="selectMonth(${i})"
-                class="px-4 py-2 whitespace-nowrap rounded-full border text-[10px] font-bold uppercase transition-all
-                ${i === selectedBudgetMonth
-                    ? 'bg-brand-500 text-white border-brand-500 shadow-lg shadow-brand-500/20'
-                    : 'bg-slate-100 text-slate-400 border-slate-200'}">
-                ${m}
-            </button>
-        `).join('');
-        const monthTitle = document.getElementById('editing-month-name');
-        if (monthTitle) monthTitle.innerText = MONTHS_LIST[selectedBudgetMonth];
-    }
-
-    function saveToLocalStorage() {
-        localStorage.setItem(ST_ACCS,    JSON.stringify(accounts));
-        localStorage.setItem(ST_TXS,     JSON.stringify(transactions));
-        localStorage.setItem(ST_CATS,    JSON.stringify(CATEGORIES));
-        localStorage.setItem(ST_BUDGETS, JSON.stringify(annualBudgets));
-    }
-
-    function renderAll() {
-        updateCalculations();
-        renderAccountGrid();
-        renderHistory();
-        renderCategoryList();
-        populateSelectors();
-        saveToLocalStorage();
-    }
-
-    // ============================================================
-    // 2. SUPABASE & SYNC
-    // ============================================================
-
-    async function initSupabase() {
-        if (typeof supabase === 'undefined') { console.warn('Supabase SDK not loaded'); return; }
-        try {
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            updateSyncUI();
-            if (isSyncActive) await fetchFromCloud();
-        } catch (e) { console.error("Supabase init failed", e); }
-    }
-
-    async function fetchFromCloud() {
-        if (!supabaseClient || !isSyncActive) return;
-        showLoading(true, "ซิงค์ข้อมูล Cloud...");
-        try {
-            const { data: accData, error: accErr } = await supabaseClient.from('accounts').select('*');
-            if (accErr) throw accErr;
-            if (accData && accData.length > 0) accounts = accData;
-
-            const { data: txData, error: txErr } = await supabaseClient
-                .from('transactions').select('*').order('date', { ascending: false });
-            if (txErr) throw txErr;
-            if (txData) transactions = txData;
-
-            const { data: catData, error: catErr } = await supabaseClient.from('categories').select('*');
-            if (catErr) throw catErr;
-            if (catData && catData.length > 0) CATEGORIES = catData;
-
-            const { data: budData, error: budErr } = await supabaseClient.from('budgets').select('*');
-            if (budErr) throw budErr;
-            // FIX: normalize key เป็น integer เสมอ
-            if (budData) budData.forEach(row => { annualBudgets[parseInt(row.month_key)] = row.data; });
-
-            renderAll();
-        } catch (e) {
-            console.error("Cloud fetch error:", e);
-            showToast("ไม่สามารถดึงข้อมูล Cloud ได้");
-        }
-        showLoading(false);
-    }
-
-    async function pushToCloud(table, data) {
-        // FIX #4: guard ทั้ง supabaseClient และ isSyncActive
-        if (!supabaseClient || !isSyncActive) return;
-        try {
-            const { error } = await supabaseClient.from(table).upsert(data);
-            if (error) throw error;
-        } catch (e) {
-            console.error(`Push to ${table} failed:`, e);
-        }
-    }
-
-    // ============================================================
-    // 3. BUSINESS LOGIC
-    // ============================================================
-
-    // FIX #8: revertBalance ที่ครอบคลุม debt account และ transfer
-    function revertBalance(id) {
-        const tx = transactions.find(t => t.id === id);
-        if (!tx) return;
-        const fAcc = accounts.find(a => a.name === tx.from);
-        const tAcc = tx.to ? accounts.find(a => a.name === tx.to) : null;
-
-        if (tx.type === 'expense') {
-            // คืนเงินกลับบัญชีต้นทาง
-            if (fAcc) fAcc.balance += parseFloat(tx.amount);
-        } else if (tx.type === 'income') {
-            // ลบเงินออกจากบัญชีต้นทาง
-            if (fAcc) fAcc.balance -= parseFloat(tx.amount);
-        } else if (tx.type === 'transfer') {
-            // คืนสู่สภาพเดิมทั้งสองฝั่ง
-            if (fAcc) fAcc.balance += parseFloat(tx.amount);
-            if (tAcc) tAcc.balance -= parseFloat(tx.amount);
-        }
-    }
-
-    async function handleTransaction(event) {
-        event.preventDefault();
-
-        const type   = document.getElementById('tx-type').value;
-        const amount = parseFloat(document.getElementById('tx-amount').value);
-        if (isNaN(amount) || amount <= 0) return showToast("กรุณากรอกจำนวนเงินที่ถูกต้อง");
-
-        const fromId  = parseInt(document.getElementById('from-account').value);
-        const fromAcc = accounts.find(a => a.id === fromId);
-        if (!fromAcc) return showToast("ไม่พบบัญชีต้นทาง");
-
-        // ตรวจยอดก่อนหักเงิน (ยกเว้น income และ debt account)
-        if (type !== 'income' && fromAcc.type !== 'debt') {
-            const currentBalance = editingTxId
-                ? fromAcc.balance + (transactions.find(t => t.id === editingTxId)?.amount || 0)
-                : fromAcc.balance;
-            if (amount > currentBalance) return showToast("ยอดเงินในบัญชีไม่เพียงพอ!");
-        }
-
-        // revert ก่อนถ้าเป็น edit
-        if (editingTxId) revertBalance(editingTxId);
-
-        // FIX #5: date format เป็น YYYY-MM-DD เสมอ
-        const rawDate = document.getElementById('tx-date').value;
-        const dateStr = rawDate || todayStr();
-
-        const newTx = {
-            id:           editingTxId || Date.now(),
-            type,
-            amount,
-            from:         fromAcc.name,
-            // FIX: เก็บ from_id และ to_id ไว้ด้วยเพื่อความแม่นยำ
-            from_id:      fromAcc.id,
-            category:     type === 'transfer' ? 'โอนเงิน' : (document.getElementById('tx-category').value || ''),
-            sub_category: document.getElementById('tx-sub-category').value || null,
-            note:         document.getElementById('tx-note').value || '',
-            date:         dateStr
-        };
-
-        if (type === 'transfer') {
-            const toId  = parseInt(document.getElementById('to-account').value);
-            const toAcc = accounts.find(a => a.id === toId);
-            if (!toAcc)               return showToast("ไม่พบบัญชีปลายทาง");
-            if (toAcc.id === fromId)  return showToast("บัญชีต้นทางและปลายทางต้องไม่เหมือนกัน");
-            fromAcc.balance -= amount;
-            toAcc.balance   += amount;
-            newTx.to    = toAcc.name;
-            newTx.to_id = toAcc.id;
-            if (isSyncActive) {
-                await pushToCloud('accounts', fromAcc);
-                await pushToCloud('accounts', toAcc);
-            }
-        } else if (type === 'expense') {
-            fromAcc.balance -= amount;
-            if (isSyncActive) await pushToCloud('accounts', fromAcc);
-        } else {
-            fromAcc.balance += amount;
-            if (isSyncActive) await pushToCloud('accounts', fromAcc);
-        }
-
-        if (editingTxId) {
-            const idx = transactions.findIndex(t => t.id === editingTxId);
-            if (idx !== -1) transactions[idx] = newTx;
-        } else {
-            transactions.unshift(newTx);
-        }
-
-        if (isSyncActive) await pushToCloud('transactions', newTx);
-        resetForm();
-        renderAll();
-        showToast(editingTxId ? "อัปเดตรายการสำเร็จ ✓" : "บันทึกรายการสำเร็จ ✓", 'success');
-    }
-
-    async function saveAccount() {
-        const name    = document.getElementById('new-acc-name').value.trim();
-        const type    = document.getElementById('new-acc-type').value;
-        const balance = parseFloat(document.getElementById('new-acc-balance').value) || 0;
-        if (!name) return showToast("กรุณากรอกชื่อบัญชี");
-
-        // ตรวจชื่อซ้ำ (ยกเว้นตัวเอง)
-        const duplicate = accounts.find(a => a.name === name && a.id !== editingAccountId);
-        if (duplicate) return showToast("ชื่อบัญชีนี้มีอยู่แล้ว");
-
-        let acc;
-        if (editingAccountId) {
-            const idx = accounts.findIndex(a => a.id === editingAccountId);
-            accounts[idx] = { ...accounts[idx], name, type, balance };
-            acc = accounts[idx];
-        } else {
-            acc = { id: Date.now(), name, type, balance };
-            accounts.push(acc);
-        }
-        if (isSyncActive) await pushToCloud('accounts', acc);
-        closeAccountModal();
-        renderAll();
-    }
-
-    // FIX #4: guard supabaseClient ใน saveBudgets
-    async function saveBudgets() {
-        const inputs  = document.querySelectorAll('.budget-input');
-        const updated = {};
-        inputs.forEach(i => { updated[i.dataset.cat] = parseFloat(i.value) || 0; });
-        annualBudgets[selectedBudgetMonth] = updated;
-        if (isSyncActive && supabaseClient) {
-            const { error } = await supabaseClient.from('budgets').upsert({
-                month_key: String(selectedBudgetMonth),
-                data:      updated
-            });
-            if (error) { console.error("Budget save error:", error); showToast("บันทึก Cloud ไม่สำเร็จ"); }
-        }
-        saveToLocalStorage();
-        updateCalculations();
-        showToast("บันทึกงบประมาณสำเร็จ ✓", 'success');
-    }
-
-    async function addCategory() {
-        const name = document.getElementById('new-cat-name').value.trim();
-        const type = document.getElementById('new-cat-type').value;
-        if (!name) return showToast("กรุณากรอกชื่อหมวดหมู่");
-        if (CATEGORIES.some(c => c.name === name && c.parent_id === null && c.type === type))
-            return showToast("หมวดหมู่นี้มีอยู่แล้ว");
-
-        const newCat = { id: Date.now(), name, type, parent_id: null };
-        CATEGORIES.push(newCat);
-        if (isSyncActive) await pushToCloud('categories', newCat);
-        document.getElementById('new-cat-name').value = '';
-        renderAll();
-    }
-
-    async function addSubCategory() {
-        const name     = document.getElementById('new-sub-cat-name').value.trim();
-        const parentId = parseInt(document.getElementById('sub-cat-parent-select').value);
-        if (!name)     return showToast("กรุณากรอกชื่อหมวดหมู่ย่อย");
-        if (!parentId) return showToast("กรุณาเลือกหมวดหมู่หลัก");
-
-        const parent = CATEGORIES.find(c => c.id === parentId);
-        if (!parent) return showToast("ไม่พบหมวดหมู่หลัก");
-        if (CATEGORIES.some(c => c.name === name && c.parent_id === parentId))
-            return showToast("หมวดหมู่ย่อยนี้มีอยู่แล้ว");
-
-        const newCat = { id: Date.now(), name, type: parent.type, parent_id: parentId };
-        CATEGORIES.push(newCat);
-        if (isSyncActive) await pushToCloud('categories', newCat);
-        document.getElementById('new-sub-cat-name').value = '';
-        renderAll();
-    }
-
-    // FIX #1: deleteCategory ลบ sub-categories ด้วยเสมอ (รับ id ไม่ใช่ name)
-    async function deleteCategory(id) {
-        const cat = CATEGORIES.find(c => c.id === id);
-        if (!cat) return;
-        if (!confirm(`ลบหมวดหมู่ "${cat.name}" และหมวดหมู่ย่อยทั้งหมด?`)) return;
-
-        const subIds = CATEGORIES.filter(c => c.parent_id === id).map(c => c.id);
-        const allIds = [id, ...subIds];
-
-        // ลบออกจาก local array ทั้งหมดในรอบเดียว
-        CATEGORIES = CATEGORIES.filter(c => !allIds.includes(c.id));
-
-        if (isSyncActive && supabaseClient) {
-            const { error } = await supabaseClient.from('categories').delete().in('id', allIds);
-            if (error) console.error("Category delete error:", error);
-        }
-        renderAll();
-    }
-
-    async function deleteCategoryById(id) {
-        const cat = CATEGORIES.find(c => c.id === id);
-        if (!cat) return;
-        if (!confirm(`ลบหมวดหมู่ย่อย "${cat.name}"?`)) return;
-
-        CATEGORIES = CATEGORIES.filter(c => c.id !== id);
-        if (isSyncActive && supabaseClient) {
-            const { error } = await supabaseClient.from('categories').delete().eq('id', id);
-            if (error) console.error("Sub-category delete error:", error);
-        }
-        renderAll();
-    }
-
-    function copyPrevMonthBudget() {
-        const prev = selectedBudgetMonth === 0 ? 11 : selectedBudgetMonth - 1;
-        if (annualBudgets[prev] && Object.keys(annualBudgets[prev]).length > 0) {
-            annualBudgets[selectedBudgetMonth] = { ...annualBudgets[prev] };
-            renderBudgetEditor();
-            updateCalculations();
-            showToast(`คัดลอกงบจาก ${MONTHS_LIST[prev]} สำเร็จ ✓`, 'success');
-        } else {
-            showToast(`ยังไม่มีข้อมูลงบประมาณของ ${MONTHS_LIST[prev]}`);
-        }
-    }
-
-    function editTx(id) {
-        const tx = transactions.find(t => t.id === id);
-        if (!tx) return;
-        editingTxId = id;
-        switchTab('overview');
-        document.getElementById('form-container').classList.add('edit-mode');
-        document.getElementById('edit-indicator').classList.remove('hidden');
-        setTxType(tx.type);
-
-        // FIX #5: normalize date เป็น YYYY-MM-DD
-        const d = new Date(tx.date);
-        const dateStr = isNaN(d) ? todayStr() : d.toISOString().split('T')[0];
-        document.getElementById('tx-date').value = dateStr;
-
-        document.getElementById('tx-amount').value = tx.amount;
-        document.getElementById('tx-note').value   = tx.note || '';
-
-        // ใช้ from_id ก่อน ถ้าไม่มีให้ค้นหาจากชื่อ (backward compat)
-        const fAcc = tx.from_id
-            ? accounts.find(a => a.id === tx.from_id)
-            : accounts.find(a => a.name === tx.from);
-        if (fAcc) document.getElementById('from-account').value = fAcc.id;
-
-        if (tx.to || tx.to_id) {
-            const tAcc = tx.to_id
-                ? accounts.find(a => a.id === tx.to_id)
-                : accounts.find(a => a.name === tx.to);
-            if (tAcc) document.getElementById('to-account').value = tAcc.id;
-        }
-
-        populateSelectors();
-        if (document.getElementById('tx-category')) {
-            document.getElementById('tx-category').value = tx.category || '';
-            populateSubSelectors();
-            document.getElementById('tx-sub-category').value = tx.sub_category || '';
-        }
-
-        document.getElementById('submit-btn').innerText = "อัปเดตรายการ";
-        document.getElementById('cancel-edit-btn').classList.remove('hidden');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    async function deleteTx(id) {
-        if (!confirm('ลบรายการนี้?')) return;
-        revertBalance(id);
-        const tx = transactions.find(t => t.id === id);
-        transactions = transactions.filter(t => t.id !== id);
-
-        if (isSyncActive && supabaseClient) {
-            const { error } = await supabaseClient.from('transactions').delete().eq('id', id);
-            if (error) console.error("Delete tx error:", error);
-            // sync account balance ที่เปลี่ยนไป
-            if (tx) {
-                const fAcc = accounts.find(a => a.name === tx.from);
-                const tAcc = tx.to ? accounts.find(a => a.name === tx.to) : null;
-                if (fAcc) await pushToCloud('accounts', fAcc);
-                if (tAcc) await pushToCloud('accounts', tAcc);
-            }
-        }
-        renderAll();
-    }
-
-    // ============================================================
-    // 4. NAVIGATION & UI
-    // ============================================================
-
-    function switchTab(tab) {
-        ['overview', 'accounts', 'budget', 'history'].forEach(v => {
-            document.getElementById(`view-${v}`)?.classList.add('hidden');
-            document.getElementById(`nav-${v}`)?.classList.remove('active');
-        });
-        document.getElementById(`view-${tab}`)?.classList.remove('hidden');
-        document.getElementById(`nav-${tab}`)?.classList.add('active');
-
-        // FIX #7: renderCharts เฉพาะตอนแท็บ accounts เท่านั้น
-        if (tab === 'accounts') renderCharts();
-        if (tab === 'budget') {
-            renderBudgetEditor();
-            renderMonthSelector();
-            populateSelectors();
-            renderCategoryList();
-        }
-        window.scrollTo(0, 0);
-    }
-
-    function selectMonth(i) {
-        selectedBudgetMonth = i;
-        renderMonthSelector();
-        renderBudgetEditor();
-        updateCalculations();
-    }
-
-    function openAccountModal(id = null) {
-        editingAccountId = id;
-        if (id) {
-            const acc = accounts.find(a => a.id === id);
-            if (!acc) return;
-            document.getElementById('new-acc-name').value    = acc.name;
-            document.getElementById('new-acc-type').value    = acc.type;
-            document.getElementById('new-acc-balance').value = acc.balance;
-        } else {
-            document.getElementById('new-acc-name').value    = '';
-            document.getElementById('new-acc-type').value    = 'asset';
-            document.getElementById('new-acc-balance').value = '';
-        }
-        document.getElementById('account-modal').classList.remove('hidden');
-    }
-
-    function closeAccountModal() {
-        document.getElementById('account-modal').classList.add('hidden');
-        editingAccountId = null;
-    }
-
-    function showLoading(show, txt) {
-        document.getElementById('loading-screen').classList.toggle('hidden', !show);
-        if (txt) document.getElementById('loading-text').innerText = txt;
-    }
-
-    // Toast notification ใหม่ แทน alert()
-    function showToast(msg, type = 'error') {
-        let toast = document.getElementById('toast-msg');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'toast-msg';
-            toast.className = 'fixed top-20 left-1/2 -translate-x-1/2 z-[200] px-5 py-3 rounded-2xl text-sm font-bold shadow-xl transition-all duration-300';
-            document.body.appendChild(toast);
-        }
-        toast.innerText = msg;
-        toast.style.background = type === 'success' ? '#059669' : '#f43f5e';
-        toast.style.color = '#fff';
-        toast.style.opacity = '1';
-        clearTimeout(toast._t);
-        toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
-    }
-
-    function resetForm() {
-        editingTxId = null;
-        document.querySelector('form')?.reset();
-        document.getElementById('form-container').classList.remove('edit-mode');
-        document.getElementById('edit-indicator').classList.add('hidden');
-        document.getElementById('submit-btn').innerText = "บันทึกรายการ";
-        document.getElementById('cancel-edit-btn').classList.add('hidden');
-        setTxType('expense');
-        const elDate = document.getElementById('tx-date');
-        if (elDate) elDate.value = todayStr();
-    }
-
-    // FIX #6: setTxType จัดการ button style ครบ 3 ปุ่ม
-    function setTxType(type) {
-        const typeInp = document.getElementById('tx-type');
-        if (typeInp) typeInp.value = type;
-
-        ['expense', 'income', 'transfer'].forEach(t => {
-            const btn = document.getElementById(`btn-type-${t}`);
-            if (!btn) return;
-            // ลบ active class ทุกอัน
-            btn.classList.remove('active-expense', 'active-income', 'active-transfer', 'inactive');
-            if (t === type) btn.classList.add(`active-${type}`);
-            else            btn.classList.add('inactive');
-        });
-
-        // ซ่อน/แสดง to-account เฉพาะตอน transfer
-        document.getElementById('to-account-div')?.classList.toggle('hidden', type !== 'transfer');
-        // ซ่อน category selector ตอน transfer (ไม่จำเป็น)
-        document.getElementById('cat-select-container')?.classList.toggle('hidden', type === 'transfer');
-        document.getElementById('sub-cat-container')?.classList.toggle('hidden', type === 'transfer');
-
-        populateSelectors();
-    }
-
-    function renderCharts() {
-        const canvas = document.getElementById('assetChart');
-        if (!canvas) return;
-        if (assetChart) { assetChart.destroy(); assetChart = null; }
-
-        const nonZero = accounts.filter(a => parseFloat(a.balance) !== 0);
-        if (nonZero.length === 0) return;
-
-        assetChart = new Chart(canvas.getContext('2d'), {
-            type: 'doughnut',
-            data: {
-                labels: nonZero.map(a => a.name),
-                datasets: [{
-                    data:            nonZero.map(a => Math.abs(parseFloat(a.balance))),
-                    backgroundColor: nonZero.map((_, i) => `hsl(${150 + i * 45}, 60%, 50%)`),
-                    borderWidth:     4,
-                    borderColor:     '#ffffff'
-                }]
-            },
-            options: {
-                maintainAspectRatio: false,
-                cutout: '80%',
-                plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } } }
-            }
-        });
-    }
-
-    function ensureBudgetIntegrity() {
-        for (let i = 0; i < 12; i++) {
-            if (!annualBudgets[i]) annualBudgets[i] = {};
-            CATEGORIES.forEach(cat => {
-                if (annualBudgets[i][cat.name] === undefined) annualBudgets[i][cat.name] = 0;
-            });
-        }
-    }
-
-    async function toggleSyncMode() {
-        isSyncActive = !isSyncActive;
-        localStorage.setItem('ws_sync_active', String(isSyncActive));
-        updateSyncUI();
-        if (isSyncActive) await fetchFromCloud();
-    }
-
-    function updateSyncUI() {
-        const btn  = document.getElementById('sync-toggle-btn');
-        const icon = document.getElementById('sync-icon');
-        const dot  = document.getElementById('sync-status');
-        const ind  = document.getElementById('cloud-indicator');
-        if (!btn) return;
-        if (isSyncActive) {
-            icon.innerText = "☁️";
-            dot?.classList.replace('bg-slate-200', 'bg-brand-500');
-            if (ind) { ind.innerText = 'ONLINE'; ind.className = 'text-[8px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-600 uppercase tracking-widest'; }
-        } else {
-            icon.innerText = "💤";
-            dot?.classList.replace('bg-brand-500', 'bg-slate-200');
-            if (ind) { ind.innerText = 'LOCAL'; ind.className = 'text-[8px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 uppercase tracking-widest'; }
-        }
-    }
-
-    // ============================================================
-    // 5. INIT
-    // ============================================================
-
-    function init() {
-        // FIX #5: ตั้งวันที่เริ่มต้นเป็น format YYYY-MM-DD
-        const elDate = document.getElementById('tx-date');
-        if (elDate) elDate.value = todayStr();
-
-        ensureBudgetIntegrity();
-        setTxType('expense');   // set initial button style
-        initSupabase();
-        renderAll();
-    }
-
-    window.onload = init;
-    </script>
+  });
+  return pi-pe;
+}
+function renderCalcs(){
+  const now=new Date();
+  const nw=accs.reduce((s,a)=>s+parseFloat(a.balance),0);
+  const {inc,exp,net}=calcMon(now.getMonth(),now.getFullYear());
+  const plan=calcPlan();
+  const setEl=(id,v,c)=>{const el=document.getElementById(id);if(!el)return;el.textContent=v;if(c)el.style.color=c;};
+  setEl('h-nw', `฿${fmt(nw,2)}`, nw<0?'var(--red)':'var(--green)');
+  setEl('h-net',`฿${fmt(net,0)}`,net<0?'var(--red)':'var(--green)');
+  setEl('s-inc',`฿${fmtS(inc)}`);
+  setEl('s-exp',`฿${fmtS(exp)}`);
+  setEl('s-plan',`฿${fmtS(plan)}`,plan<0?'var(--red)':'var(--green)');
+}
+
+// ═══════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════
+function txHtml(t){
+  const ico=t.type==='income'?'💰':t.type==='expense'?'💸':'↔️';
+  const sub=t.sub_category?` <span style="color:var(--muted);">›</span> ${t.sub_category}`:'';
+  const note=t.note?`<span style="color:var(--muted)"> · ${t.note}</span>`:'';
+  return `<div class="txi" onclick="editTx(${t.id})">
+    <div class="txi-ico ${t.type[0]}">${ico}</div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.category||'—'}${sub}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:1px;">${t.from||''}${note}</div>
+    </div>
+    <div style="text-align:right;flex-shrink:0;">
+      <div style="font-size:14px;font-weight:900;color:${t.type==='income'?'var(--green)':'var(--red)'};">฿${fmt(t.amount)}</div>
+      <button onclick="event.stopPropagation();delTx(${t.id})" style="font-size:9px;font-weight:700;color:var(--muted);padding-top:2px;">ลบ</button>
+    </div>
+  </div>`;
+}
+
+function renderRecent(){
+  const el=document.getElementById('recent-list'); if(!el)return;
+  const r=txs.slice(0,8);
+  el.innerHTML=r.length?r.map(txHtml).join(''):`<div style="text-align:center;padding:36px 0;color:var(--muted);font-size:13px;">กด + เพื่อบันทึกรายการแรก</div>`;
+}
+
+function renderHistory(){
+  const el=document.getElementById('hist-list'); if(!el)return;
+  // FIX#3: guard null
+  const q=(document.getElementById('srch')?.value||'').toLowerCase();
+  const filtered=txs.filter(t=>(t.note||'').toLowerCase().includes(q)||(t.category||'').toLowerCase().includes(q)||(t.sub_category||'').toLowerCase().includes(q));
+  if(!filtered.length){el.innerHTML=`<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">ไม่พบรายการ</div>`;return;}
+  const byDate={};
+  filtered.forEach(t=>{const d=t.date?.split('T')[0]||'';if(!byDate[d])byDate[d]=[];byDate[d].push(t);});
+  el.innerHTML=Object.entries(byDate).map(([d,ts])=>{
+    const dl=d?new Date(d+'T00:00:00').toLocaleDateString('th-TH',{weekday:'short',day:'numeric',month:'short'}):'—';
+    return`<div class="dsep">${dl}</div>`+ts.map(txHtml).join('');
+  }).join('');
+}
+
+function renderAccList(){
+  const el=document.getElementById('acc-list'); if(!el)return;
+  if(!accs.length){el.innerHTML=`<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">ยังไม่มีบัญชี</div>`;return;}
+  el.innerHTML=accs.map(a=>{
+    const b=parseFloat(a.balance);
+    const tl=a.type==='investment'?'การลงทุน':a.type==='debt'?'หนี้สิน':'ทรัพย์สิน';
+    return `<div class="ac ${a.type}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <span class="pill ${a.type}">${tl}</span>
+          <div style="font-size:17px;font-weight:800;margin-top:7px;letter-spacing:-.3px;">${a.name}</div>
+          <div style="font-size:26px;font-weight:900;letter-spacing:-1px;margin-top:3px;color:${b<0?'var(--red)':'var(--text)'};">฿${fmt(b,2)}</div>
+        </div>
+        <button onclick="openAccSheet(${a.id})" style="width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✏️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderChart(){
+  const canvas=document.getElementById('chart-acc'); if(!canvas)return;
+  if(chart){chart.destroy();chart=null;}
+  const nz=accs.filter(a=>parseFloat(a.balance)!==0);
+  if(!nz.length)return;
+  chart=new Chart(canvas.getContext('2d'),{
+    type:'doughnut',
+    data:{
+      labels:nz.map(a=>a.name),
+      datasets:[{data:nz.map(a=>Math.abs(parseFloat(a.balance))),backgroundColor:nz.map((_,i)=>`hsl(${140+i*60},60%,${42+i*4}%)`),borderWidth:3,borderColor:'#111118'}]
+    },
+    options:{maintainAspectRatio:false,cutout:'78%',plugins:{legend:{display:true,position:'bottom',labels:{color:'#7a7a9a',font:{size:11,family:'Prompt'},boxWidth:11,padding:12}}}}
+  });
+}
+
+function renderCatList(){
+  const pSel=document.getElementById('sub-parent');
+  if(pSel){const all=CATS.filter(c=>!c.parent_id);pSel.innerHTML=all.map(c=>`<option value="${c.id}">${emo(c.name)} ${c.name} (${c.type==='income'?'รับ':'จ่าย'})</option>`).join('');}
+
+  const build=type=>{
+    const mains=CATS.filter(c=>c.type===type&&!c.parent_id);
+    if(!mains.length)return`<div style="font-size:11px;color:var(--muted);padding:6px 0;">ยังไม่มีหมวดหมู่</div>`;
+    return mains.map(m=>{
+      const subs=CATS.filter(c=>c.parent_id===m.id);
+      return`<div class="card2" style="padding:10px 11px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+          <span style="font-size:13px;font-weight:700;">${emo(m.name)} ${m.name}</span>
+          <button onclick="delCat(${m.id})" style="font-size:11px;font-weight:700;color:var(--red);">ลบ</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+          ${subs.map(s=>`<div style="display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;background:var(--bg2);border:1px solid var(--border);font-size:10px;font-weight:600;">${s.name}<button onclick="delSub(${s.id})" style="color:var(--muted);font-size:12px;line-height:1;margin-left:2px;">×</button></div>`).join('')}
+          ${!subs.length?`<span style="font-size:10px;color:var(--muted);">ไม่มีหมวดย่อย</span>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  };
+  const ee=document.getElementById('cl-exp');const ie=document.getElementById('cl-inc');
+  if(ee)ee.innerHTML=build('expense');
+  if(ie)ie.innerHTML=build('income');
+}
+
+function renderBudProgress(){
+  const el=document.getElementById('bud-progress'); if(!el)return;
+  const b=buds[selMon]||{};
+  const now=new Date(); const y=now.getFullYear();
+  const rows=CATS.filter(c=>!c.parent_id).map(m=>{
+    const subs=CATS.filter(c=>c.parent_id===m.id);
+    const cats=subs.length?subs:[m];
+    const budget=cats.reduce((s,c)=>s+(parseFloat(b[c.name])||0),0);
+    if(!budget)return'';
+    const actTxs=txs.filter(t=>{const d=new Date(t.date);return d.getMonth()===selMon&&d.getFullYear()===y&&(t.category===m.name||cats.some(c=>c.name===t.sub_category||c.name===t.category));});
+    const actual=actTxs.reduce((s,t)=>s+parseFloat(t.amount),0);
+    const pct=Math.min(budget?actual/budget*100:0,100);
+    const over=actual>budget;
+    const col=over?'var(--red)':pct>75?'var(--amber)':'var(--green)';
+    return`<div class="card" style="padding:13px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:14px;font-weight:700;">${emo(m.name)} ${m.name}</span>
+        <div style="text-align:right;">
+          <span style="font-size:13px;font-weight:900;color:${over?'var(--red)':'var(--text)'};">฿${fmtS(actual)}</span>
+          <span style="font-size:10px;color:var(--muted);"> / ฿${fmtS(budget)}</span>
+        </div>
+      </div>
+      <div class="pbar"><div class="pfill" style="width:${pct}%;background:${col};"></div></div>
+      ${over?`<div style="font-size:10px;color:var(--red);font-weight:700;margin-top:5px;">⚠️ เกินงบ ฿${fmtS(actual-budget)}</div>`:''}
+    </div>`;
+  }).filter(Boolean);
+  el.innerHTML=rows.length?rows.join(''):`<div style="text-align:center;padding:28px;color:var(--muted);font-size:13px;">ยังไม่ได้ตั้งงบประมาณ</div>`;
+}
+
+function renderBudEditor(){
+  const b=buds[selMon]||{};
+  const gen=type=>{
+    const mains=CATS.filter(c=>c.type===type&&!c.parent_id);
+    if(!mains.length)return'';
+    let h=`<p style="font-size:10px;font-weight:700;color:${type==='income'?'var(--green)':'var(--red)'};letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px;">${type==='income'?'💰 รายรับ':'💸 รายจ่าย'}</p>`;
+    mains.forEach(m=>{
+      const subs=CATS.filter(c=>c.parent_id===m.id);
+      if(subs.length){
+        h+=`<div style="margin-bottom:10px;"><p style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:6px;">${emo(m.name)} ${m.name}</p><div style="display:flex;flex-direction:column;gap:6px;padding-left:12px;border-left:2px solid var(--border);">${subs.map(s=>`<div style="display:flex;align-items:center;gap:10px;"><span style="font-size:12px;font-weight:600;flex:1;">${s.name}</span><div style="position:relative;"><span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);">฿</span><input type="number" min="0" data-c="${s.name}" value="${b[s.name]||0}" class="bi f" style="width:100px;padding:8px 8px 8px 22px;text-align:right;font-size:12px;font-weight:700;"></div></div>`).join('')}</div></div>`;
+      }else{
+        h+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="font-size:12px;font-weight:600;flex:1;">${emo(m.name)} ${m.name}</span><div style="position:relative;"><span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);">฿</span><input type="number" min="0" data-c="${m.name}" value="${b[m.name]||0}" class="bi f" style="width:100px;padding:8px 8px 8px 22px;text-align:right;font-size:12px;font-weight:700;"></div></div>`;
+      }
+    });
+    return h;
+  };
+  const ie=document.getElementById('be-inc');const ee=document.getElementById('be-exp');
+  if(ie)ie.innerHTML=gen('income'); if(ee)ee.innerHTML=gen('expense');
+}
+
+function renderMonthTabs(){
+  const el=document.getElementById('m-tabs'); if(!el)return;
+  const cur=new Date().getMonth();
+  el.innerHTML=MONTHS_S.map((m,i)=>`
+    <button onclick="pickMon(${i})" style="padding:7px 14px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;
+      background:${i===selMon?'var(--green)':'var(--bg3)'};
+      color:${i===selMon?'#0a0a0f':'var(--muted)'};
+      border:1px solid ${i===selMon?'var(--green)':'var(--border)'};
+      ${i===cur?'text-decoration:underline;text-underline-offset:2px;':''}">${m}</button>
+  `).join('');
+}
+function pickMon(i){selMon=i;renderMonthTabs();renderBudProgress();renderBudEditor();renderCalcs();}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+const VIEWS=['home','accounts','budget','history'];
+function switchTab(t){
+  VIEWS.forEach(v=>{
+    document.getElementById(`v-${v}`).style.display='none';
+    document.getElementById(`nb-${v}`).classList.remove('on');
+  });
+  const el=document.getElementById(`v-${t}`);
+  el.style.display='block'; void el.offsetWidth; el.classList.add('fade');
+  document.getElementById(`nb-${t}`).classList.add('on');
+  if(t==='accounts'){renderAccList();renderChart();}
+  if(t==='budget'){renderMonthTabs();renderBudProgress();renderBudEditor();renderCatList();}
+  if(t==='history')renderHistory();
+  window.scrollTo(0,0);
+}
+
+function toggleManage(){
+  manOpen=!manOpen;
+  document.getElementById('mgr-sec').style.display=manOpen?'flex':'none';
+  document.getElementById('mgr-btn').textContent=manOpen?'✕ ปิดหน้าจัดการ':'⚙️ จัดการหมวดหมู่ & ตั้งงบประมาณ';
+  if(manOpen)renderCatList();
+}
+
+async function toggleSync(){
+  syncOn=!syncOn;
+  localStorage.setItem('ws_sync',String(syncOn));
+  document.getElementById('sync-ic').textContent=syncOn?'☁️':'💤';
+  if(syncOn) await pullCloud();
+  else toast('โหมด Local เท่านั้น','err');
+}
+
+// ═══════════════════════════════════════════
+// STORAGE & INIT
+// ═══════════════════════════════════════════
+function save(){
+  localStorage.setItem(KEY.A,JSON.stringify(accs));
+  localStorage.setItem(KEY.T,JSON.stringify(txs));
+  localStorage.setItem(KEY.C,JSON.stringify(CATS));
+  localStorage.setItem(KEY.B,JSON.stringify(buds));
+}
+function ensureBuds(){
+  for(let i=0;i<12;i++){
+    if(!buds[i])buds[i]={};
+    CATS.forEach(c=>{if(buds[i][c.name]===undefined)buds[i][c.name]=0;});
+  }
+}
+function renderAll(){
+  renderCalcs(); renderRecent(); save();
+}
+
+window.onload=async()=>{
+  setLoad(true,'กำลังโหลด...');
+  ensureBuds();
+  document.getElementById('sync-ic').textContent=syncOn?'☁️':'💤';
+  await initDB();
+  renderAll();
+  renderMonthTabs();
+  setType('expense');
+  setLoad(false);
+};
+</script>
 </body>
 </html>
