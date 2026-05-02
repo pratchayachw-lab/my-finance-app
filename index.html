@@ -35,6 +35,12 @@
         .edit-mode { border: 2px solid #fbbf24 !important; background-color: #fffbeb !important; }
         .loading-overlay { background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        /* FIX #6: proper active button style for tx type */
+        .tx-type-btn { transition: all 0.15s ease; }
+        .tx-type-btn.active-expense { background: white; color: #f43f5e; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 0.75rem; }
+        .tx-type-btn.active-income  { background: white; color: #059669; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 0.75rem; }
+        .tx-type-btn.active-transfer{ background: white; color: #3b82f6; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 0.75rem; }
+        .tx-type-btn.inactive { color: #64748b; }
     </style>
 </head>
 <body class="text-slate-800 pb-24">
@@ -50,7 +56,6 @@
     <!-- Header Status Bar -->
     <header class="bg-white border-b border-slate-100 sticky top-0 z-40 px-3 py-4 flex justify-between items-center shadow-sm">
         <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <!-- Net Worth -->
             <div class="flex items-center gap-1.5 shrink-0" onclick="switchTab('overview')">
                 <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white text-base shadow-lg">฿</div>
                 <div class="leading-tight">
@@ -58,18 +63,15 @@
                     <span class="text-sm font-black text-brand-700" id="display-net-worth">฿ 0.00</span>
                 </div>
             </div>
-            <!-- Month Net (จริง) -->
             <div class="border-l border-slate-100 pl-2 leading-tight shrink-0">
                 <h1 class="text-[9px] font-bold text-slate-400 uppercase leading-none">Net (จริง)</h1>
                 <span class="text-sm font-black text-brand-600" id="display-cash-flow">฿ 0.00</span>
             </div>
-            <!-- Month Net (แผน) -->
             <div class="border-l border-slate-100 pl-2 leading-tight shrink-0">
                 <h1 class="text-[9px] font-bold text-slate-400 uppercase leading-none">Net (แผน)</h1>
                 <span class="text-sm font-black text-slate-400" id="display-plan-net">฿ 0.00</span>
             </div>
         </div>
-        
         <div class="flex items-center gap-2 shrink-0">
             <div id="sync-status" class="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
             <button id="sync-toggle-btn" onclick="toggleSyncMode()" class="w-10 h-10 rounded-xl flex items-center justify-center border transition-all active:scale-90 shadow-sm">
@@ -79,10 +81,9 @@
     </header>
 
     <main class="max-w-md mx-auto p-4">
-        
+
         <!-- VIEW: OVERVIEW -->
         <div id="view-overview" class="fade-in space-y-6">
-            <!-- Summary Dashboard -->
             <div class="bg-white p-5 rounded-xl3 border border-slate-200 shadow-sm overflow-hidden">
                 <div class="flex justify-between items-center mb-4">
                     <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">สรุปกระแสเงินสดเดือนนี้</h4>
@@ -104,7 +105,6 @@
                 </div>
             </div>
 
-            <!-- Form Card -->
             <div id="form-container" class="bg-white p-5 rounded-xl3 border border-slate-200 shadow-sm transition-all duration-300">
                 <div class="flex justify-between items-center mb-4">
                     <h3 id="form-title" class="font-bold text-slate-800 text-lg tracking-tighter leading-none">บันทึกรายการ</h3>
@@ -112,9 +112,10 @@
                 </div>
                 <form onsubmit="handleTransaction(event)" class="space-y-4">
                     <div class="flex p-1 bg-slate-100 rounded-2xl">
-                        <button type="button" onclick="setTxType('expense')" id="btn-type-expense" class="flex-1 py-2 text-sm font-bold rounded-xl bg-white shadow-sm text-expense transition-all">จ่าย</button>
-                        <button type="button" onclick="setTxType('income')" id="btn-type-income" class="flex-1 py-2 text-sm font-bold rounded-xl text-slate-500 transition-all">รับ</button>
-                        <button type="button" onclick="setTxType('transfer')" id="btn-type-transfer" class="flex-1 py-2 text-sm font-bold rounded-xl text-slate-500 transition-all">โอน</button>
+                        <!-- FIX #6: use tx-type-btn class for proper toggling -->
+                        <button type="button" onclick="setTxType('expense')"  id="btn-type-expense"  class="tx-type-btn flex-1 py-2 text-sm font-bold transition-all">จ่าย</button>
+                        <button type="button" onclick="setTxType('income')"   id="btn-type-income"   class="tx-type-btn flex-1 py-2 text-sm font-bold transition-all">รับ</button>
+                        <button type="button" onclick="setTxType('transfer')" id="btn-type-transfer" class="tx-type-btn flex-1 py-2 text-sm font-bold transition-all">โอน</button>
                     </div>
                     <input type="hidden" id="tx-type" value="expense">
                     <div class="grid grid-cols-2 gap-3">
@@ -133,7 +134,7 @@
                     </div>
 
                     <div class="relative">
-                        <input type="number" id="tx-amount" required placeholder="0.00" class="w-full p-5 bg-brand-50 border border-brand-100 rounded-2xl text-3xl font-black text-brand-700 text-center outline-none">
+                        <input type="number" id="tx-amount" required min="0.01" step="0.01" placeholder="0.00" class="w-full p-5 bg-brand-50 border border-brand-100 rounded-2xl text-3xl font-black text-brand-700 text-center outline-none">
                         <div class="absolute left-5 top-1/2 -translate-y-1/2 text-brand-300 font-bold text-xl">฿</div>
                     </div>
 
@@ -149,7 +150,7 @@
                     </div>
 
                     <input type="text" id="tx-note" placeholder="บันทึกช่วยจำ..." class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none">
-                    
+
                     <div class="flex gap-2 pt-2">
                         <button type="submit" id="submit-btn" class="flex-grow py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-all">บันทึกรายการ</button>
                         <button type="button" id="cancel-edit-btn" onclick="resetForm()" class="hidden px-6 bg-slate-100 text-slate-500 font-bold rounded-2xl">ยกเลิก</button>
@@ -172,11 +173,9 @@
 
         <!-- VIEW: BUDGET -->
         <div id="view-budget" class="hidden fade-in space-y-8">
-            <!-- Category Management -->
             <div class="bg-white p-6 rounded-xl3 shadow-sm border border-slate-200">
                 <h3 class="text-lg font-bold text-brand-700 mb-4 uppercase text-xs tracking-widest">จัดการหมวดหมู่</h3>
-                
-                <!-- Main Category Add -->
+
                 <div class="space-y-2 mb-6">
                     <p class="text-[10px] font-bold text-slate-400 uppercase ml-1">เพิ่มหมวดหมู่หลัก</p>
                     <div class="flex gap-2">
@@ -189,13 +188,10 @@
                     </div>
                 </div>
 
-                <!-- Sub Category Add -->
                 <div class="space-y-2 border-t border-slate-50 pt-4 mb-6">
                     <p class="text-[10px] font-bold text-slate-400 uppercase ml-1">เพิ่มหมวดหมู่ย่อย</p>
                     <div class="flex gap-2">
-                        <select id="sub-cat-parent-select" class="flex-1 p-2 border rounded-xl text-sm bg-slate-50 outline-none">
-                            <!-- Populated dynamically -->
-                        </select>
+                        <select id="sub-cat-parent-select" class="flex-1 p-2 border rounded-xl text-sm bg-slate-50 outline-none"></select>
                         <input type="text" id="new-sub-cat-name" placeholder="ชื่อหมวดหมู่ย่อย..." class="flex-grow p-2 border rounded-xl text-sm outline-none bg-slate-50">
                         <button onclick="addSubCategory()" class="px-4 py-2 bg-brand-700 text-white rounded-xl text-sm font-bold">+</button>
                     </div>
@@ -213,11 +209,10 @@
                 </div>
             </div>
 
-            <!-- Monthly Budget Settings -->
             <div class="bg-white p-6 rounded-xl3 shadow-sm border border-slate-200">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-bold text-brand-700 uppercase text-xs tracking-widest">ตั้งงบประมาณ: <span id="editing-month-name" class="text-slate-400"></span></h3>
-                    <button onclick="copyPrevMonthBudget()" class="text-[9px] font-bold text-brand-600 underline uppercase">เดือนก่อน</button>
+                    <button onclick="copyPrevMonthBudget()" class="text-[9px] font-bold text-brand-600 underline uppercase">คัดลอกจากเดือนก่อน</button>
                 </div>
                 <div class="flex gap-2 overflow-x-auto pb-4 custom-scroll no-scrollbar" id="budget-month-selector"></div>
                 <div id="budget-editor-income" class="space-y-6 border-b border-slate-100 pb-6"></div>
@@ -239,8 +234,8 @@
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 flex justify-around items-center h-20 bottom-nav px-2 z-50">
         <button onclick="switchTab('overview')" id="nav-overview" class="nav-item active flex flex-col items-center gap-1 transition-all"><div class="icon-bg p-2 text-xl">🏠</div><span class="text-[10px] font-bold uppercase tracking-tighter">หน้าแรก</span></button>
         <button onclick="switchTab('accounts')" id="nav-accounts" class="nav-item flex flex-col items-center gap-1 transition-all"><div class="icon-bg p-2 text-xl">💳</div><span class="text-[10px] font-bold uppercase tracking-tighter">บัญชี</span></button>
-        <button onclick="switchTab('budget')" id="nav-budget" class="nav-item flex flex-col items-center gap-1 transition-all"><div class="icon-bg p-2 text-xl">📊</div><span class="text-[10px] font-bold uppercase tracking-tighter">แผนงาน</span></button>
-        <button onclick="switchTab('history')" id="nav-history" class="nav-item flex flex-col items-center gap-1 transition-all"><div class="icon-bg p-2 text-xl">🕒</div><span class="text-[10px] font-bold uppercase tracking-tighter">ประวัติ</span></button>
+        <button onclick="switchTab('budget')"   id="nav-budget"   class="nav-item flex flex-col items-center gap-1 transition-all"><div class="icon-bg p-2 text-xl">📊</div><span class="text-[10px] font-bold uppercase tracking-tighter">แผนงาน</span></button>
+        <button onclick="switchTab('history')"  id="nav-history"  class="nav-item flex flex-col items-center gap-1 transition-all"><div class="icon-bg p-2 text-xl">🕒</div><span class="text-[10px] font-bold uppercase tracking-tighter">ประวัติ</span></button>
     </nav>
 
     <!-- Account Modal -->
@@ -264,575 +259,856 @@
     </div>
 
     <script>
-        // --- ⚙️ CONFIG & STATE ---
-        const SUPABASE_URL = "https://xyotqopwkcxblapoaiae.supabase.co"; 
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5b3Rxb3B3a2N4YmxhcG9haWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MDI0ODMsImV4cCI6MjA5MTQ3ODQ4M30.qNBaRDz9WGAXxX0tUcBLoMg6yA4Jz4EypTT_TJuZzkk";
-        
-        const VERSION = "v101_smart_budget";
-        const ST_ACCS = `ws_accs_${VERSION}`;
-        const ST_TXS = `ws_txs_${VERSION}`;
-        const ST_CATS = `ws_cats_${VERSION}`;
-        const ST_BUDGETS = `ws_budgets_${VERSION}`;
+    // ============================================================
+    // ⚙️  CONFIG & STATE
+    // ============================================================
+    // NOTE: Supabase anon key is intentionally public (Supabase design)
+    // IMPORTANT: Enable Row Level Security (RLS) on ALL tables in
+    // your Supabase dashboard to prevent unauthorised access.
+    // See: https://supabase.com/docs/guides/auth/row-level-security
+    const SUPABASE_URL = "https://xyotqopwkcxblapoaiae.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5b3Rxb3B3a2N4YmxhcG9haWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MDI0ODMsImV4cCI6MjA5MTQ3ODQ4M30.qNBaRDz9WGAXxX0tUcBLoMg6yA4Jz4EypTT_TJuZzkk";
 
-        let supabaseClient = null;
-        let isSyncActive = localStorage.getItem('ws_sync_active') !== 'false';
-        
-        let CATEGORIES = JSON.parse(localStorage.getItem(ST_CATS)) || [
-            { id: 1, name: 'เงินเดือน', type: 'income', parent_id: null },
-            { id: 2, name: 'อาหาร', type: 'expense', parent_id: null },
-            { id: 3, name: 'อื่นๆ', type: 'expense', parent_id: null }
-        ];
-        let accounts = JSON.parse(localStorage.getItem(ST_ACCS)) || [{ id: 1, name: 'เงินสด', type: 'asset', balance: 0 }];
-        let transactions = JSON.parse(localStorage.getItem(ST_TXS)) || [];
-        let annualBudgets = JSON.parse(localStorage.getItem(ST_BUDGETS)) || {};
-        
-        let editingTxId = null;
-        let editingAccountId = null;
-        let selectedBudgetMonth = new Date().getMonth();
-        let assetChart = null;
+    // FIX #11: VERSION-based localStorage migration
+    // ── เปลี่ยน VERSION เมื่อ schema เปลี่ยน แล้วทำ migrate ข้อมูลเก่า
+    const CURRENT_VERSION = "v101_smart_budget";
+    const ST_ACCS    = `ws_accs_${CURRENT_VERSION}`;
+    const ST_TXS     = `ws_txs_${CURRENT_VERSION}`;
+    const ST_CATS    = `ws_cats_${CURRENT_VERSION}`;
+    const ST_BUDGETS = `ws_budgets_${CURRENT_VERSION}`;
 
-        const MONTHS_LIST = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+    // ── ดึงข้อมูลจาก localStorage พร้อม fallback
+    let supabaseClient = null;
+    let isSyncActive = localStorage.getItem('ws_sync_active') !== 'false';
 
-        // --- 1. CORE UTILITIES ---
+    let CATEGORIES = JSON.parse(localStorage.getItem(ST_CATS)) || [
+        { id: 1, name: 'เงินเดือน', type: 'income',  parent_id: null },
+        { id: 2, name: 'อาหาร',     type: 'expense', parent_id: null },
+        { id: 3, name: 'อื่นๆ',     type: 'expense', parent_id: null }
+    ];
+    let accounts     = JSON.parse(localStorage.getItem(ST_ACCS))    || [{ id: 1, name: 'เงินสด', type: 'asset', balance: 0 }];
+    let transactions = JSON.parse(localStorage.getItem(ST_TXS))     || [];
+    let annualBudgets= JSON.parse(localStorage.getItem(ST_BUDGETS)) || {};
 
-        function populateSelectors() {
-            const opts = accounts.map(a => `<option value="${a.id}">${a.name} (฿${parseFloat(a.balance).toLocaleString()})</option>`).join('');
-            const fromEl = document.getElementById('from-account');
-            const toEl = document.getElementById('to-account');
-            const catEl = document.getElementById('tx-category');
-            
-            if(fromEl) fromEl.innerHTML = opts;
-            if(toEl) toEl.innerHTML = opts;
-            
-            const currentType = document.getElementById('tx-type')?.value || 'expense';
-            const mainCats = CATEGORIES.filter(c => c.type === currentType && c.parent_id === null);
-            if(catEl) {
-                catEl.innerHTML = mainCats.map(c => `<option value="${c.name}" data-id="${c.id}">${c.name}</option>`).join('');
-                populateSubSelectors(); 
-            }
+    let editingTxId      = null;
+    let editingAccountId = null;
+    let selectedBudgetMonth = new Date().getMonth();
+    let assetChart = null;
 
-            const parentSelect = document.getElementById('sub-cat-parent-select');
-            if(parentSelect) {
-                const allMainCats = CATEGORIES.filter(c => c.parent_id === null);
-                parentSelect.innerHTML = allMainCats.map(c => `<option value="${c.id}">${c.name} (${c.type === 'income' ? 'รับ' : 'จ่าย'})</option>`).join('');
-            }
+    const MONTHS_LIST = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                         'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+    // ============================================================
+    // 1. CORE UTILITIES
+    // ============================================================
+
+    function todayStr() {
+        // FIX #5: date format เป็น YYYY-MM-DD เสมอ
+        return new Date().toISOString().split('T')[0];
+    }
+
+    function populateSelectors() {
+        const opts = accounts
+            .map(a => `<option value="${a.id}">${a.name} (฿${parseFloat(a.balance).toLocaleString()})</option>`)
+            .join('');
+
+        const fromEl = document.getElementById('from-account');
+        const toEl   = document.getElementById('to-account');
+        const catEl  = document.getElementById('tx-category');
+
+        if (fromEl) fromEl.innerHTML = opts;
+        if (toEl)   toEl.innerHTML   = opts;
+
+        const currentType = document.getElementById('tx-type')?.value || 'expense';
+        // transfer ไม่ใช้ category ปกติ ซ่อน dropdown ไว้
+        const mainCats = CATEGORIES.filter(c => c.type === currentType && c.parent_id === null);
+        if (catEl) {
+            catEl.innerHTML = mainCats
+                .map(c => `<option value="${c.name}" data-id="${c.id}">${c.name}</option>`)
+                .join('');
+            populateSubSelectors();
         }
 
-        function populateSubSelectors() {
-            const catEl = document.getElementById('tx-category');
-            const subCatEl = document.getElementById('tx-sub-category');
-            if(!catEl || !subCatEl) return;
+        const parentSelect = document.getElementById('sub-cat-parent-select');
+        if (parentSelect) {
+            const allMainCats = CATEGORIES.filter(c => c.parent_id === null);
+            parentSelect.innerHTML = allMainCats
+                .map(c => `<option value="${c.id}">${c.name} (${c.type === 'income' ? 'รับ' : 'จ่าย'})</option>`)
+                .join('');
+        }
+    }
 
-            const selectedOption = catEl.options[catEl.selectedIndex];
-            const parentId = selectedOption ? parseInt(selectedOption.getAttribute('data-id')) : null;
+    function populateSubSelectors() {
+        const catEl    = document.getElementById('tx-category');
+        const subCatEl = document.getElementById('tx-sub-category');
+        if (!catEl || !subCatEl) return;
 
-            if(parentId) {
-                const subCats = CATEGORIES.filter(c => c.parent_id === parentId);
-                if(subCats.length > 0) {
-                    subCatEl.innerHTML = '<option value="">-- เลือก --</option>' + subCats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-                    subCatEl.disabled = false;
-                } else {
-                    subCatEl.innerHTML = '<option value="">ไม่มีหมวดหมู่ย่อย</option>';
-                    subCatEl.disabled = true;
-                }
+        const selectedOption = catEl.options[catEl.selectedIndex];
+        const parentId = selectedOption ? parseInt(selectedOption.getAttribute('data-id')) : null;
+
+        if (parentId) {
+            const subCats = CATEGORIES.filter(c => c.parent_id === parentId);
+            if (subCats.length > 0) {
+                subCatEl.innerHTML = '<option value="">-- เลือก --</option>' +
+                    subCats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+                subCatEl.disabled = false;
+            } else {
+                subCatEl.innerHTML = '<option value="">ไม่มีหมวดหมู่ย่อย</option>';
+                subCatEl.disabled = true;
             }
+        } else {
+            subCatEl.innerHTML = '<option value="">ไม่มีหมวดหมู่ย่อย</option>';
+            subCatEl.disabled = true;
+        }
+    }
+
+    function updateCalculations() {
+        const netWorthTotal = accounts.reduce((s, a) => s + parseFloat(a.balance), 0);
+        const now  = new Date();
+        const curM = now.getMonth();
+        const curY = now.getFullYear();
+
+        const monthlyTxs = transactions.filter(t => {
+            // FIX #5: date อาจเป็น "YYYY-MM-DD" หรือ ISO string — normalize ก่อน
+            const d = new Date(t.date);
+            return d.getMonth() === curM && d.getFullYear() === curY;
+        });
+
+        const inc = monthlyTxs.filter(t => t.type === 'income') .reduce((s, t) => s + parseFloat(t.amount), 0);
+        const exp = monthlyTxs.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0);
+        const actualNet = inc - exp;
+
+        const nwEl = document.getElementById('display-net-worth');
+        if (nwEl) {
+            nwEl.innerText = `฿ ${netWorthTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            nwEl.style.color = netWorthTotal < 0 ? '#f43f5e' : '#047857';
         }
 
-        function updateCalculations() {
-            const netWorthTotal = accounts.reduce((s, a) => s + parseFloat(a.balance), 0);
-            const now = new Date();
-            const curM = now.getMonth();
-            const curY = now.getFullYear();
-            
-            const monthlyTxs = transactions.filter(t => {
-                const d = new Date(t.date);
-                return d.getMonth() === curM && d.getFullYear() === curY;
-            });
-            
-            const inc = monthlyTxs.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount), 0);
-            const exp = monthlyTxs.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0);
-            const actualNet = inc - exp;
-            
-            const nwEl = document.getElementById('display-net-worth');
-            if(nwEl) { nwEl.innerText = `฿ ${netWorthTotal.toLocaleString(undefined, {minimumFractionDigits:2})}`; nwEl.style.color = netWorthTotal < 0 ? '#f43f5e' : '#047857'; }
-            
-            const acEl = document.getElementById('display-cash-flow');
-            if(acEl) { acEl.innerText = `฿ ${actualNet.toLocaleString(undefined, {minimumFractionDigits:2})}`; acEl.style.color = actualNet < 0 ? '#f43f5e' : '#059669'; }
-
-            // PLAN NET CALCULATION
-            const planData = annualBudgets[curM] || {};
-            let pInc = 0; let pExp = 0;
-            
-            CATEGORIES.forEach(c => {
-                // If it has inputs in the editor, we sum it up
-                const hasSubs = CATEGORIES.some(sc => sc.parent_id === c.id);
-                const isMainWithoutSubs = c.parent_id === null && !hasSubs;
-                const isSub = c.parent_id !== null;
-
-                if (isMainWithoutSubs || isSub) {
-                    const val = parseFloat(planData[c.name] || 0);
-                    if(c.type === 'income') pInc += val; else pExp += val;
-                }
-            });
-
-            const planNet = pInc - pExp;
-            const plEl = document.getElementById('display-plan-net');
-            if(plEl) { plEl.innerText = `฿ ${planNet.toLocaleString(undefined, {minimumFractionDigits:2})}`; }
-
-            if(document.getElementById('m-income-val')) document.getElementById('m-income-val').innerText = `฿ ${inc.toLocaleString()}`;
-            if(document.getElementById('m-expense-val')) document.getElementById('m-expense-val').innerText = `฿ ${exp.toLocaleString()}`;
-            const netValEl = document.getElementById('m-net-val');
-            if(netValEl) { netValEl.innerText = `฿ ${actualNet.toLocaleString()}`; netValEl.style.color = actualNet < 0 ? '#f43f5e' : '#059669'; }
+        const acEl = document.getElementById('display-cash-flow');
+        if (acEl) {
+            acEl.innerText = `฿ ${actualNet.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            acEl.style.color = actualNet < 0 ? '#f43f5e' : '#059669';
         }
 
-        function renderAccountGrid() {
-            const grid = document.getElementById('account-grid');
-            if(!grid) return;
-            grid.innerHTML = accounts.map(a => `
-                <div class="bg-white p-5 rounded-2xl border flex justify-between items-center shadow-sm">
+        // Plan Net
+        const planData = annualBudgets[selectedBudgetMonth] || {};
+        let pInc = 0, pExp = 0;
+        CATEGORIES.forEach(c => {
+            const hasSubs = CATEGORIES.some(sc => sc.parent_id === c.id);
+            const isMainWithoutSubs = c.parent_id === null && !hasSubs;
+            const isSub = c.parent_id !== null;
+            if (isMainWithoutSubs || isSub) {
+                const val = parseFloat(planData[c.name] || 0);
+                if (c.type === 'income') pInc += val;
+                else pExp += val;
+            }
+        });
+        const planNet = pInc - pExp;
+        const plEl = document.getElementById('display-plan-net');
+        if (plEl) {
+            plEl.innerText = `฿ ${planNet.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            plEl.style.color = planNet < 0 ? '#f43f5e' : '#047857';
+        }
+
+        if (document.getElementById('m-income-val'))  document.getElementById('m-income-val').innerText  = `฿ ${inc.toLocaleString()}`;
+        if (document.getElementById('m-expense-val')) document.getElementById('m-expense-val').innerText = `฿ ${exp.toLocaleString()}`;
+        const netValEl = document.getElementById('m-net-val');
+        if (netValEl) {
+            netValEl.innerText   = `฿ ${actualNet.toLocaleString()}`;
+            netValEl.style.color = actualNet < 0 ? '#f43f5e' : '#059669';
+        }
+    }
+
+    function renderAccountGrid() {
+        const grid = document.getElementById('account-grid');
+        if (!grid) return;
+        grid.innerHTML = accounts.map(a => `
+            <div class="bg-white p-5 rounded-2xl border flex justify-between items-center shadow-sm">
+                <div>
+                    <span class="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 tracking-wider">${a.type}</span>
+                    <h4 class="font-bold text-slate-700 mt-1">${a.name}</h4>
+                    <p class="text-xl font-black ${parseFloat(a.balance) < 0 ? 'text-rose-500' : 'text-slate-900'}">฿${parseFloat(a.balance).toLocaleString()}</p>
+                </div>
+                <button onclick="openAccountModal(${a.id})" class="p-3 text-slate-300 hover:text-brand-500 transition-colors">✏️</button>
+            </div>
+        `).join('');
+    }
+
+    function renderHistory() {
+        const container = document.getElementById('history-container');
+        if (!container) return;
+        // FIX #3: guard null note/category ก่อน toLowerCase()
+        const q = (document.getElementById('filter-search')?.value || '').toLowerCase();
+        const filtered = transactions.filter(t =>
+            (t.note         || '').toLowerCase().includes(q) ||
+            (t.category     || '').toLowerCase().includes(q) ||
+            (t.sub_category || '').toLowerCase().includes(q)
+        );
+
+        if (filtered.length === 0) {
+            container.innerHTML = `<div class="text-center py-12 text-slate-300 text-sm font-bold">ยังไม่มีรายการ</div>`;
+            return;
+        }
+
+        container.innerHTML = filtered.map(t => `
+            <div class="bg-white p-4 rounded-2xl border shadow-sm flex justify-between items-center active:bg-slate-50 transition-all" onclick="editTx(${t.id})">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold ${t.type==='income'?'bg-emerald-50 text-emerald-500':'bg-rose-50 text-rose-500'}">
+                        ${t.type==='income'?'💰':t.type==='expense'?'💸':'↔️'}
+                    </div>
                     <div>
-                        <span class="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 tracking-wider">${a.type}</span>
-                        <h4 class="font-bold text-slate-700 mt-1">${a.name}</h4>
-                        <p class="text-xl font-black ${parseFloat(a.balance) < 0 ? 'text-rose-500' : 'text-slate-900'}">฿${parseFloat(a.balance).toLocaleString()}</p>
-                    </div>
-                    <button onclick="openAccountModal(${a.id})" class="p-3 text-slate-300 hover:text-brand-500 transition-colors">✏️</button>
-                </div>
-            `).join('');
-        }
-
-        function renderHistory() {
-            const container = document.getElementById('history-container');
-            if(!container) return;
-            const q = document.getElementById('filter-search')?.value.toLowerCase() || "";
-            const filtered = transactions.filter(t => t.note.toLowerCase().includes(q) || t.category.toLowerCase().includes(q) || (t.sub_category && t.sub_category.toLowerCase().includes(q)));
-            
-            container.innerHTML = filtered.map(t => `
-                <div class="bg-white p-4 rounded-2xl border shadow-sm flex justify-between items-center active:bg-slate-50 transition-all" onclick="editTx(${t.id})">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold ${t.type==='income'?'bg-emerald-50 text-emerald-500':'bg-rose-50 text-rose-500'}">
-                            ${t.type==='income'?'💰':t.type==='expense'?'💸':'↔️'}
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-sm text-slate-700 leading-tight">
-                                ${t.category}${t.sub_category ? ` <span class="text-slate-300 font-normal">›</span> ${t.sub_category}` : ''}
-                            </h4>
-                            <p class="text-[10px] text-slate-400 uppercase font-bold mt-0.5">${new Date(t.date).toLocaleDateString()} • ${t.from}</p>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <p class="font-black ${t.type==='income'?'text-emerald-600':'text-rose-500'}">฿${parseFloat(t.amount).toLocaleString()}</p>
-                        <button onclick="event.stopPropagation(); deleteTx(${t.id})" class="text-[8px] font-black text-rose-200 uppercase mt-1">ลบรายการ</button>
+                        <h4 class="font-bold text-sm text-slate-700 leading-tight">
+                            ${t.category||'—'}${t.sub_category ? ` <span class="text-slate-300 font-normal">›</span> ${t.sub_category}` : ''}
+                        </h4>
+                        <p class="text-[10px] text-slate-400 uppercase font-bold mt-0.5">
+                            ${new Date(t.date).toLocaleDateString('th-TH')} • ${t.from||''}
+                            ${t.note ? '• ' + t.note : ''}
+                        </p>
                     </div>
                 </div>
-            `).join('');
-        }
+                <div class="text-right shrink-0 ml-2">
+                    <p class="font-black ${t.type==='income'?'text-emerald-600':'text-rose-500'}">฿${parseFloat(t.amount).toLocaleString()}</p>
+                    <button onclick="event.stopPropagation(); deleteTx(${t.id})" class="text-[8px] font-black text-rose-200 uppercase mt-1">ลบรายการ</button>
+                </div>
+            </div>
+        `).join('');
+    }
 
-        function renderCategoryList() {
-            const expList = document.getElementById('cat-list-expense');
-            const incList = document.getElementById('cat-list-income');
-            if(!expList || !incList) return;
+    function renderCategoryList() {
+        const expList = document.getElementById('cat-list-expense');
+        const incList = document.getElementById('cat-list-income');
+        if (!expList || !incList) return;
 
-            const buildTree = (type) => {
-                const mainCats = CATEGORIES.filter(c => c.type === type && c.parent_id === null);
-                return mainCats.map(m => {
-                    const subs = CATEGORIES.filter(c => c.parent_id === m.id);
-                    return `
-                    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-[11px] font-black uppercase text-slate-600">${m.name}</span>
-                            <button onclick="deleteCategory('${m.name}')" class="text-rose-300 text-xs font-bold">ลบ</button>
-                        </div>
-                        <div class="flex flex-wrap gap-2">
+        const buildTree = (type) => {
+            const mainCats = CATEGORIES.filter(c => c.type === type && c.parent_id === null);
+            if (mainCats.length === 0) return `<p class="text-[9px] text-slate-300 italic pl-2">ยังไม่มีหมวดหมู่</p>`;
+            return mainCats.map(m => {
+                const subs = CATEGORIES.filter(c => c.parent_id === m.id);
+                return `
+                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[11px] font-black uppercase text-slate-600">${m.name}</span>
+                        <button onclick="deleteCategory(${m.id})" class="text-rose-300 text-xs font-bold hover:text-rose-500 transition-colors">ลบ</button>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        ${subs.map(s => `
+                            <div class="px-2 py-0.5 bg-white border border-slate-200 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm">
+                                ${s.name}
+                                <button onclick="deleteCategoryById(${s.id})" class="text-slate-300 hover:text-rose-400">×</button>
+                            </div>
+                        `).join('')}
+                        ${subs.length === 0 ? '<span class="text-[9px] text-slate-300 italic">ยังไม่มีหมวดหมู่ย่อย</span>' : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        };
+
+        expList.innerHTML = buildTree('expense');
+        incList.innerHTML = buildTree('income');
+    }
+
+    function renderBudgetEditor() {
+        const b = annualBudgets[selectedBudgetMonth] || {};
+        const mainCats = CATEGORIES.filter(c => c.parent_id === null);
+
+        const generateHtml = (type) => {
+            let html = `<p class="text-[10px] font-bold ${type==='income'?'text-emerald-500':'text-rose-500'} uppercase mb-4 tracking-widest leading-none">
+                ${type==='income'?'💰 ประมาณการรายรับ':'💸 ประมาณการรายจ่าย'}</p>`;
+
+            const cats = mainCats.filter(c => c.type === type);
+            if (cats.length === 0) {
+                html += `<p class="text-[9px] text-slate-300 italic">ยังไม่มีหมวดหมู่</p>`;
+                return html;
+            }
+
+            cats.forEach(m => {
+                const subs = CATEGORIES.filter(sc => sc.parent_id === m.id);
+                if (subs.length > 0) {
+                    html += `<div class="mb-4">
+                        <p class="text-[9px] font-black text-slate-400 uppercase mb-2 pl-1">${m.name}</p>
+                        <div class="space-y-2 pl-3 border-l-2 border-slate-100">
                             ${subs.map(s => `
-                                <div class="px-2 py-0.5 bg-white border border-slate-200 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm">
-                                    ${s.name}
-                                    <button onclick="deleteCategoryById(${s.id})" class="text-slate-300">×</button>
+                                <div class="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
+                                    <label class="flex-grow text-[11px] font-bold text-slate-600">${s.name}</label>
+                                    <div class="relative">
+                                        <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">฿</span>
+                                        <input type="number" min="0" oninput="updateCalculations()"
+                                            data-cat="${s.name}" value="${b[s.name] || 0}"
+                                            class="budget-input w-28 pl-5 pr-2 py-1 bg-slate-50 border rounded-xl text-right text-xs font-black outline-none focus:border-brand-500">
+                                    </div>
                                 </div>
                             `).join('')}
-                            ${subs.length === 0 ? '<span class="text-[9px] text-slate-300 italic">ยังไม่มีหมวดหมู่ย่อย</span>' : ''}
                         </div>
                     </div>`;
-                }).join('');
-            };
-
-            expList.innerHTML = buildTree('expense');
-            incList.innerHTML = buildTree('income');
-        }
-
-        function renderBudgetEditor() {
-            const b = annualBudgets[selectedBudgetMonth] || {};
-            const mainCats = CATEGORIES.filter(c => c.parent_id === null);
-
-            const generateHtml = (type) => {
-                let html = `<p class="text-[10px] font-bold ${type === 'income' ? 'text-emerald-500' : 'text-rose-500'} uppercase mb-4 tracking-widest leading-none">${type === 'income' ? '💰 ประมาณการรายรับ' : '💸 ประมาณการรายจ่าย'}</p>`;
-                
-                mainCats.filter(c => c.type === type).forEach(m => {
-                    const subs = CATEGORIES.filter(sc => sc.parent_id === m.id);
-                    if (subs.length > 0) {
-                        html += `<div class="mb-4">
-                            <p class="text-[9px] font-black text-slate-400 uppercase mb-2 pl-1">${m.name}</p>
-                            <div class="space-y-2 pl-3 border-l-2 border-slate-100">
-                                ${subs.map(s => `
-                                    <div class="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
-                                        <label class="flex-grow text-[11px] font-bold text-slate-600">${s.name}</label>
-                                        <div class="relative">
-                                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">฿</span>
-                                            <input type="number" oninput="updateCalculations()" data-cat="${s.name}" value="${b[s.name]||0}" class="budget-input w-28 pl-5 pr-2 py-1 bg-slate-50 border rounded-xl text-right text-xs font-black outline-none focus:border-brand-500">
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>`;
-                    } else {
-                        html += `
-                        <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100 mb-4">
-                            <label class="flex-grow text-[11px] font-bold text-slate-600 uppercase leading-none">${m.name}</label>
-                            <div class="relative">
-                                <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">฿</span>
-                                <input type="number" oninput="updateCalculations()" data-cat="${m.name}" value="${b[m.name]||0}" class="budget-input w-28 pl-5 pr-2 py-1 bg-white border rounded-xl text-right text-xs font-black outline-none focus:border-brand-500">
-                            </div>
-                        </div>`;
-                    }
-                });
-                return html;
-            };
-
-            const incEd = document.getElementById('budget-editor-income');
-            const expEd = document.getElementById('budget-editor-expense');
-            if(incEd) incEd.innerHTML = generateHtml('income');
-            if(expEd) expEd.innerHTML = generateHtml('expense');
-        }
-
-        function renderMonthSelector() {
-            const sel = document.getElementById('budget-month-selector');
-            if(!sel) return;
-            sel.innerHTML = MONTHS_LIST.map((m, i) => `<button onclick="selectMonth(${i})" class="px-4 py-2 whitespace-nowrap rounded-full border text-[10px] font-bold uppercase transition-all ${i===selectedBudgetMonth?'bg-brand-500 text-white border-brand-500 shadow-lg shadow-brand-500/20':'bg-slate-100 text-slate-400 border-slate-200'}">${m}</button>`).join('');
-            const monthTitle = document.getElementById('editing-month-name');
-            if(monthTitle) monthTitle.innerText = MONTHS_LIST[selectedBudgetMonth];
-        }
-
-        function renderAll() {
-            updateCalculations();
-            renderAccountGrid();
-            renderHistory();
-            renderCategoryList();
-            populateSelectors();
-            localStorage.setItem(ST_ACCS, JSON.stringify(accounts));
-            localStorage.setItem(ST_TXS, JSON.stringify(transactions));
-            localStorage.setItem(ST_CATS, JSON.stringify(CATEGORIES));
-            localStorage.setItem(ST_BUDGETS, JSON.stringify(annualBudgets));
-        }
-
-        // --- 2. SUPABASE & SYNC ---
-
-        async function initSupabase() {
-            if (typeof supabase === 'undefined') return;
-            try {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                updateSyncUI();
-                if(isSyncActive) await fetchFromCloud();
-            } catch (e) { console.error("Supabase failed", e); }
-        }
-
-        async function fetchFromCloud() {
-            if (!supabaseClient || !isSyncActive) return;
-            showLoading(true, "ซิงค์ข้อมูล Cloud...");
-            try {
-                const { data: accData } = await supabaseClient.from('accounts').select('*');
-                if (accData && accData.length > 0) accounts = accData;
-                const { data: txData } = await supabaseClient.from('transactions').select('*').order('date', { ascending: false });
-                if (txData) transactions = txData;
-                const { data: catData } = await supabaseClient.from('categories').select('*');
-                if (catData && catData.length > 0) CATEGORIES = catData;
-                const { data: budData } = await supabaseClient.from('budgets').select('*');
-                if (budData) budData.forEach(row => annualBudgets[row.month_key] = row.data);
-                renderAll();
-            } catch (e) { console.error("Cloud Error", e); }
-            showLoading(false);
-        }
-
-        async function pushToCloud(table, data) {
-            if (!supabaseClient || !isSyncActive) return;
-            try { await supabaseClient.from(table).upsert(data); } catch (e) { console.error(`Push error`, e); }
-        }
-
-        // --- 3. BUSINESS LOGIC HANDLERS ---
-
-        function revertBalance(id) {
-            const tx = transactions.find(t => t.id === id);
-            if (!tx) return;
-            const fAcc = accounts.find(a => a.name === tx.from);
-            const tAcc = tx.to ? accounts.find(a => a.name === tx.to) : null;
-            if (tx.type === 'expense') { if(fAcc) fAcc.balance += parseFloat(tx.amount); }
-            else if (tx.type === 'income') { if(fAcc) fAcc.balance -= parseFloat(tx.amount); }
-            else { if(fAcc) fAcc.balance += parseFloat(tx.amount); if(tAcc) tAcc.balance -= parseFloat(tx.amount); }
-        }
-
-        async function handleTransaction(event) {
-            event.preventDefault();
-            if (editingTxId) revertBalance(editingTxId);
-
-            const type = document.getElementById('tx-type').value;
-            const amount = parseFloat(document.getElementById('tx-amount').value);
-            const fromId = parseInt(document.getElementById('from-account').value);
-            const fromAcc = accounts.find(a => a.id === fromId);
-
-            if (type !== 'income' && amount > fromAcc.balance && fromAcc.type !== 'debt') return alert("ยอดเงินไม่พอ!");
-
-            let newTx = {
-                id: editingTxId || Math.floor(Math.random() * 100000000),
-                type, amount, from: fromAcc.name,
-                category: type === 'transfer' ? 'โอนเงิน' : document.getElementById('tx-category').value,
-                sub_category: document.getElementById('tx-sub-category').value || null,
-                note: document.getElementById('tx-note').value,
-                date: document.getElementById('tx-date').value || new Date().toISOString()
-            };
-
-            if (type === 'transfer') {
-                const toAcc = accounts.find(a => a.id === parseInt(document.getElementById('to-account').value));
-                fromAcc.balance -= amount; toAcc.balance += amount; newTx.to = toAcc.name;
-                if(isSyncActive) { await pushToCloud('accounts', fromAcc); await pushToCloud('accounts', toAcc); }
-            } else if (type === 'expense') {
-                fromAcc.balance -= amount;
-                if(isSyncActive) await pushToCloud('accounts', fromAcc);
-            } else {
-                fromAcc.balance += amount;
-                if(isSyncActive) await pushToCloud('accounts', fromAcc);
-            }
-
-            if (editingTxId) {
-                const idx = transactions.findIndex(t => t.id === editingTxId);
-                transactions[idx] = newTx;
-            } else transactions.unshift(newTx);
-
-            if(isSyncActive) await pushToCloud('transactions', newTx);
-            resetForm(); renderAll();
-        }
-
-        async function saveAccount() {
-            const name = document.getElementById('new-acc-name').value;
-            const type = document.getElementById('new-acc-type').value;
-            const balance = parseFloat(document.getElementById('new-acc-balance').value) || 0;
-            if(!name) return;
-            let acc;
-            if (editingAccountId) {
-                const idx = accounts.findIndex(a => a.id === editingAccountId);
-                accounts[idx] = { ...accounts[idx], name, type, balance };
-                acc = accounts[idx];
-            } else {
-                acc = { id: Date.now(), name, type, balance };
-                accounts.push(acc);
-            }
-            if(isSyncActive) await pushToCloud('accounts', acc);
-            closeAccountModal(); renderAll();
-        }
-
-        async function saveBudgets() {
-            const inputs = document.querySelectorAll('.budget-input');
-            const updated = {};
-            inputs.forEach(i => updated[i.dataset.cat] = parseFloat(i.value) || 0);
-            annualBudgets[selectedBudgetMonth] = updated;
-            if(isSyncActive) await supabaseClient.from('budgets').upsert({ month_key: selectedBudgetMonth.toString(), data: updated });
-            renderAll(); alert('บันทึกงบประมาณสำเร็จ');
-        }
-
-        async function addCategory() {
-            const name = document.getElementById('new-cat-name').value;
-            const type = document.getElementById('new-cat-type').value;
-            if(!name.trim()) return;
-            const newCat = { id: Date.now(), name, type, parent_id: null };
-            CATEGORIES.push(newCat);
-            if(isSyncActive) await pushToCloud('categories', newCat);
-            document.getElementById('new-cat-name').value = '';
-            renderAll();
-        }
-
-        async function addSubCategory() {
-            const name = document.getElementById('new-sub-cat-name').value;
-            const parentId = parseInt(document.getElementById('sub-cat-parent-select').value);
-            if(!name.trim() || !parentId) return;
-            const parent = CATEGORIES.find(c => c.id === parentId);
-            const newCat = { id: Date.now(), name, type: parent.type, parent_id: parentId };
-            CATEGORIES.push(newCat);
-            if(isSyncActive) await pushToCloud('categories', newCat);
-            document.getElementById('new-sub-cat-name').value = '';
-            renderAll();
-        }
-
-        async function deleteCategory(name) {
-            if(confirm(`ลบหมวดหมู่หลัก ${name}?`)) {
-                const cat = CATEGORIES.find(c => c.name === name && c.parent_id === null);
-                CATEGORIES = CATEGORIES.filter(c => c.id !== cat.id);
-                if(isSyncActive && cat) await supabaseClient.from('categories').delete().eq('id', cat.id);
-                renderAll();
-            }
-        }
-
-        async function deleteCategoryById(id) {
-            if(confirm(`ลบหมวดหมู่นี้?`)) {
-                CATEGORIES = CATEGORIES.filter(c => c.id !== id);
-                if(isSyncActive) await supabaseClient.from('categories').delete().eq('id', id);
-                renderAll();
-            }
-        }
-
-        function copyPrevMonthBudget() {
-            const prev = selectedBudgetMonth === 0 ? 11 : selectedBudgetMonth - 1;
-            if(annualBudgets[prev]) {
-                annualBudgets[selectedBudgetMonth] = { ...annualBudgets[prev] };
-                renderBudgetEditor(); updateCalculations();
-            } else alert("ยังไม่มีข้อมูลเดือนก่อนหน้า");
-        }
-
-        function editTx(id) {
-            const tx = transactions.find(t => t.id === id);
-            if(!tx) return;
-            editingTxId = id;
-            switchTab('overview');
-            document.getElementById('form-container').classList.add('edit-mode');
-            document.getElementById('edit-indicator').classList.remove('hidden');
-            setTxType(tx.type);
-            document.getElementById('tx-amount').value = tx.amount;
-            document.getElementById('tx-note').value = tx.note;
-            document.getElementById('tx-date').value = new Date(tx.date).toISOString().split('T')[0];
-            document.getElementById('tx-category').value = tx.category;
-            populateSubSelectors();
-            document.getElementById('tx-sub-category').value = tx.sub_category || '';
-            
-            const fAcc = accounts.find(a => a.name === tx.from);
-            if(fAcc) document.getElementById('from-account').value = fAcc.id;
-            if(tx.to) {
-                const tAcc = accounts.find(a => a.name === tx.to);
-                if(tAcc) document.getElementById('to-account').value = tAcc.id;
-            }
-            document.getElementById('submit-btn').innerText = "อัปเดตรายการ";
-            document.getElementById('cancel-edit-btn').classList.remove('hidden');
-        }
-
-        async function deleteTx(id) {
-            if(confirm('ลบรายการ?')) {
-                revertBalance(id);
-                transactions = transactions.filter(t => t.id !== id);
-                if(isSyncActive) await supabaseClient.from('transactions').delete().eq('id', id);
-                renderAll();
-            }
-        }
-
-        // --- 4. NAVIGATION & UI ---
-
-        function switchTab(tab) {
-            ['overview', 'accounts', 'budget', 'history'].forEach(v => {
-                const el = document.getElementById(`view-${v}`);
-                const nav = document.getElementById(`nav-${v}`);
-                if(el) el.classList.add('hidden');
-                if(nav) nav.classList.remove('active');
+                } else {
+                    html += `
+                    <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100 mb-4">
+                        <label class="flex-grow text-[11px] font-bold text-slate-600 uppercase leading-none">${m.name}</label>
+                        <div class="relative">
+                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">฿</span>
+                            <input type="number" min="0" oninput="updateCalculations()"
+                                data-cat="${m.name}" value="${b[m.name] || 0}"
+                                class="budget-input w-28 pl-5 pr-2 py-1 bg-white border rounded-xl text-right text-xs font-black outline-none focus:border-brand-500">
+                        </div>
+                    </div>`;
+                }
             });
-            const target = document.getElementById(`view-${tab}`);
-            const targetNav = document.getElementById(`nav-${tab}`);
-            if(target) target.classList.remove('hidden');
-            if(targetNav) targetNav.classList.add('active');
-            if(tab === 'overview' || tab === 'accounts') renderCharts();
-            if(tab === 'budget') { renderBudgetEditor(); renderMonthSelector(); populateSelectors(); renderCategoryList(); }
-            window.scrollTo(0, 0);
-        }
+            return html;
+        };
 
-        function selectMonth(i) { selectedBudgetMonth = i; renderMonthSelector(); renderBudgetEditor(); updateCalculations(); }
+        const incEd = document.getElementById('budget-editor-income');
+        const expEd = document.getElementById('budget-editor-expense');
+        if (incEd) incEd.innerHTML = generateHtml('income');
+        if (expEd) expEd.innerHTML = generateHtml('expense');
+    }
 
-        function openAccountModal(id = null) {
-            editingAccountId = id;
-            const modal = document.getElementById('account-modal');
-            if (id) {
-                const acc = accounts.find(a => a.id === id);
-                document.getElementById('new-acc-name').value = acc.name;
-                document.getElementById('new-acc-type').value = acc.type;
-                document.getElementById('new-acc-balance').value = acc.balance;
-            } else {
-                document.getElementById('new-acc-name').value = '';
-                document.getElementById('new-acc-balance').value = '';
-            }
-            modal.classList.remove('hidden');
-        }
+    function renderMonthSelector() {
+        const sel = document.getElementById('budget-month-selector');
+        if (!sel) return;
+        sel.innerHTML = MONTHS_LIST.map((m, i) => `
+            <button onclick="selectMonth(${i})"
+                class="px-4 py-2 whitespace-nowrap rounded-full border text-[10px] font-bold uppercase transition-all
+                ${i === selectedBudgetMonth
+                    ? 'bg-brand-500 text-white border-brand-500 shadow-lg shadow-brand-500/20'
+                    : 'bg-slate-100 text-slate-400 border-slate-200'}">
+                ${m}
+            </button>
+        `).join('');
+        const monthTitle = document.getElementById('editing-month-name');
+        if (monthTitle) monthTitle.innerText = MONTHS_LIST[selectedBudgetMonth];
+    }
 
-        function closeAccountModal() { document.getElementById('account-modal').classList.add('hidden'); }
-        function showLoading(show, txt) { document.getElementById('loading-screen').classList.toggle('hidden', !show); if(txt) document.getElementById('loading-text').innerText = txt; }
-        
-        function resetForm() {
-            editingTxId = null;
-            document.querySelector('form').reset();
-            document.getElementById('form-container').classList.remove('edit-mode');
-            document.getElementById('edit-indicator').classList.add('hidden');
-            document.getElementById('submit-btn').innerText = "บันทึกรายการ";
-            document.getElementById('cancel-edit-btn').classList.add('hidden');
-            setTxType('expense');
-            const elDate = document.getElementById('tx-date');
-            if(elDate) elDate.value = new Date().toISOString().split('T')[0];
-        }
+    function saveToLocalStorage() {
+        localStorage.setItem(ST_ACCS,    JSON.stringify(accounts));
+        localStorage.setItem(ST_TXS,     JSON.stringify(transactions));
+        localStorage.setItem(ST_CATS,    JSON.stringify(CATEGORIES));
+        localStorage.setItem(ST_BUDGETS, JSON.stringify(annualBudgets));
+    }
 
-        function setTxType(type) {
-            const typeInp = document.getElementById('tx-type');
-            if(typeInp) typeInp.value = type;
-            ['income', 'expense', 'transfer'].forEach(t => {
-                const btn = document.getElementById(`btn-type-${t}`);
-                if(btn) btn.classList.toggle('bg-white', t === type);
-            });
-            const toAccDiv = document.getElementById('to-account-div');
-            if(toAccDiv) toAccDiv.classList.toggle('hidden', type !== 'transfer');
-            populateSelectors();
-        }
+    function renderAll() {
+        updateCalculations();
+        renderAccountGrid();
+        renderHistory();
+        renderCategoryList();
+        populateSelectors();
+        saveToLocalStorage();
+    }
 
-        function renderCharts() {
-            const canvas = document.getElementById('assetChart');
-            if(!canvas) return;
-            if(assetChart) assetChart.destroy();
-            assetChart = new Chart(canvas.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: accounts.map(a => a.name),
-                    datasets: [{ data: accounts.map(a => Math.abs(parseFloat(a.balance))), backgroundColor: accounts.map((_,i) => `hsl(${150+(i*45)}, 60%, 50%)`), borderWidth: 4, borderColor: '#ffffff' }]
-                },
-                options: { maintainAspectRatio: false, cutout: '80%', plugins: { legend: { display: false } } }
-            });
-        }
+    // ============================================================
+    // 2. SUPABASE & SYNC
+    // ============================================================
 
-        function ensureBudgetIntegrity() {
-            for(let i=0; i<12; i++) {
-                if (!annualBudgets[i]) annualBudgets[i] = {};
-                CATEGORIES.forEach(cat => { if (annualBudgets[i][cat.name] === undefined) annualBudgets[i][cat.name] = 0; });
-            }
-        }
-
-        async function toggleSyncMode() {
-            isSyncActive = !isSyncActive;
-            localStorage.setItem('ws_sync_active', isSyncActive);
+    async function initSupabase() {
+        if (typeof supabase === 'undefined') { console.warn('Supabase SDK not loaded'); return; }
+        try {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             updateSyncUI();
             if (isSyncActive) await fetchFromCloud();
+        } catch (e) { console.error("Supabase init failed", e); }
+    }
+
+    async function fetchFromCloud() {
+        if (!supabaseClient || !isSyncActive) return;
+        showLoading(true, "ซิงค์ข้อมูล Cloud...");
+        try {
+            const { data: accData, error: accErr } = await supabaseClient.from('accounts').select('*');
+            if (accErr) throw accErr;
+            if (accData && accData.length > 0) accounts = accData;
+
+            const { data: txData, error: txErr } = await supabaseClient
+                .from('transactions').select('*').order('date', { ascending: false });
+            if (txErr) throw txErr;
+            if (txData) transactions = txData;
+
+            const { data: catData, error: catErr } = await supabaseClient.from('categories').select('*');
+            if (catErr) throw catErr;
+            if (catData && catData.length > 0) CATEGORIES = catData;
+
+            const { data: budData, error: budErr } = await supabaseClient.from('budgets').select('*');
+            if (budErr) throw budErr;
+            // FIX: normalize key เป็น integer เสมอ
+            if (budData) budData.forEach(row => { annualBudgets[parseInt(row.month_key)] = row.data; });
+
+            renderAll();
+        } catch (e) {
+            console.error("Cloud fetch error:", e);
+            showToast("ไม่สามารถดึงข้อมูล Cloud ได้");
+        }
+        showLoading(false);
+    }
+
+    async function pushToCloud(table, data) {
+        // FIX #4: guard ทั้ง supabaseClient และ isSyncActive
+        if (!supabaseClient || !isSyncActive) return;
+        try {
+            const { error } = await supabaseClient.from(table).upsert(data);
+            if (error) throw error;
+        } catch (e) {
+            console.error(`Push to ${table} failed:`, e);
+        }
+    }
+
+    // ============================================================
+    // 3. BUSINESS LOGIC
+    // ============================================================
+
+    // FIX #8: revertBalance ที่ครอบคลุม debt account และ transfer
+    function revertBalance(id) {
+        const tx = transactions.find(t => t.id === id);
+        if (!tx) return;
+        const fAcc = accounts.find(a => a.name === tx.from);
+        const tAcc = tx.to ? accounts.find(a => a.name === tx.to) : null;
+
+        if (tx.type === 'expense') {
+            // คืนเงินกลับบัญชีต้นทาง
+            if (fAcc) fAcc.balance += parseFloat(tx.amount);
+        } else if (tx.type === 'income') {
+            // ลบเงินออกจากบัญชีต้นทาง
+            if (fAcc) fAcc.balance -= parseFloat(tx.amount);
+        } else if (tx.type === 'transfer') {
+            // คืนสู่สภาพเดิมทั้งสองฝั่ง
+            if (fAcc) fAcc.balance += parseFloat(tx.amount);
+            if (tAcc) tAcc.balance -= parseFloat(tx.amount);
+        }
+    }
+
+    async function handleTransaction(event) {
+        event.preventDefault();
+
+        const type   = document.getElementById('tx-type').value;
+        const amount = parseFloat(document.getElementById('tx-amount').value);
+        if (isNaN(amount) || amount <= 0) return showToast("กรุณากรอกจำนวนเงินที่ถูกต้อง");
+
+        const fromId  = parseInt(document.getElementById('from-account').value);
+        const fromAcc = accounts.find(a => a.id === fromId);
+        if (!fromAcc) return showToast("ไม่พบบัญชีต้นทาง");
+
+        // ตรวจยอดก่อนหักเงิน (ยกเว้น income และ debt account)
+        if (type !== 'income' && fromAcc.type !== 'debt') {
+            const currentBalance = editingTxId
+                ? fromAcc.balance + (transactions.find(t => t.id === editingTxId)?.amount || 0)
+                : fromAcc.balance;
+            if (amount > currentBalance) return showToast("ยอดเงินในบัญชีไม่เพียงพอ!");
         }
 
-        function updateSyncUI() {
-            const btn = document.getElementById('sync-toggle-btn');
-            const icon = document.getElementById('sync-icon');
-            const dot = document.getElementById('sync-status');
-            if(!btn) return;
+        // revert ก่อนถ้าเป็น edit
+        if (editingTxId) revertBalance(editingTxId);
+
+        // FIX #5: date format เป็น YYYY-MM-DD เสมอ
+        const rawDate = document.getElementById('tx-date').value;
+        const dateStr = rawDate || todayStr();
+
+        const newTx = {
+            id:           editingTxId || Date.now(),
+            type,
+            amount,
+            from:         fromAcc.name,
+            // FIX: เก็บ from_id และ to_id ไว้ด้วยเพื่อความแม่นยำ
+            from_id:      fromAcc.id,
+            category:     type === 'transfer' ? 'โอนเงิน' : (document.getElementById('tx-category').value || ''),
+            sub_category: document.getElementById('tx-sub-category').value || null,
+            note:         document.getElementById('tx-note').value || '',
+            date:         dateStr
+        };
+
+        if (type === 'transfer') {
+            const toId  = parseInt(document.getElementById('to-account').value);
+            const toAcc = accounts.find(a => a.id === toId);
+            if (!toAcc)               return showToast("ไม่พบบัญชีปลายทาง");
+            if (toAcc.id === fromId)  return showToast("บัญชีต้นทางและปลายทางต้องไม่เหมือนกัน");
+            fromAcc.balance -= amount;
+            toAcc.balance   += amount;
+            newTx.to    = toAcc.name;
+            newTx.to_id = toAcc.id;
             if (isSyncActive) {
-                btn.classList.add('sync-btn-online'); btn.classList.remove('sync-btn-offline');
-                icon.innerText = "☁️";
-                if(dot) dot.classList.replace('bg-slate-200', 'bg-brand-500');
-            } else {
-                btn.classList.add('sync-btn-offline'); btn.classList.remove('sync-btn-online');
-                icon.innerText = "💤";
-                if(dot) dot.classList.replace('bg-brand-500', 'bg-slate-200');
+                await pushToCloud('accounts', fromAcc);
+                await pushToCloud('accounts', toAcc);
+            }
+        } else if (type === 'expense') {
+            fromAcc.balance -= amount;
+            if (isSyncActive) await pushToCloud('accounts', fromAcc);
+        } else {
+            fromAcc.balance += amount;
+            if (isSyncActive) await pushToCloud('accounts', fromAcc);
+        }
+
+        if (editingTxId) {
+            const idx = transactions.findIndex(t => t.id === editingTxId);
+            if (idx !== -1) transactions[idx] = newTx;
+        } else {
+            transactions.unshift(newTx);
+        }
+
+        if (isSyncActive) await pushToCloud('transactions', newTx);
+        resetForm();
+        renderAll();
+        showToast(editingTxId ? "อัปเดตรายการสำเร็จ ✓" : "บันทึกรายการสำเร็จ ✓", 'success');
+    }
+
+    async function saveAccount() {
+        const name    = document.getElementById('new-acc-name').value.trim();
+        const type    = document.getElementById('new-acc-type').value;
+        const balance = parseFloat(document.getElementById('new-acc-balance').value) || 0;
+        if (!name) return showToast("กรุณากรอกชื่อบัญชี");
+
+        // ตรวจชื่อซ้ำ (ยกเว้นตัวเอง)
+        const duplicate = accounts.find(a => a.name === name && a.id !== editingAccountId);
+        if (duplicate) return showToast("ชื่อบัญชีนี้มีอยู่แล้ว");
+
+        let acc;
+        if (editingAccountId) {
+            const idx = accounts.findIndex(a => a.id === editingAccountId);
+            accounts[idx] = { ...accounts[idx], name, type, balance };
+            acc = accounts[idx];
+        } else {
+            acc = { id: Date.now(), name, type, balance };
+            accounts.push(acc);
+        }
+        if (isSyncActive) await pushToCloud('accounts', acc);
+        closeAccountModal();
+        renderAll();
+    }
+
+    // FIX #4: guard supabaseClient ใน saveBudgets
+    async function saveBudgets() {
+        const inputs  = document.querySelectorAll('.budget-input');
+        const updated = {};
+        inputs.forEach(i => { updated[i.dataset.cat] = parseFloat(i.value) || 0; });
+        annualBudgets[selectedBudgetMonth] = updated;
+        if (isSyncActive && supabaseClient) {
+            const { error } = await supabaseClient.from('budgets').upsert({
+                month_key: String(selectedBudgetMonth),
+                data:      updated
+            });
+            if (error) { console.error("Budget save error:", error); showToast("บันทึก Cloud ไม่สำเร็จ"); }
+        }
+        saveToLocalStorage();
+        updateCalculations();
+        showToast("บันทึกงบประมาณสำเร็จ ✓", 'success');
+    }
+
+    async function addCategory() {
+        const name = document.getElementById('new-cat-name').value.trim();
+        const type = document.getElementById('new-cat-type').value;
+        if (!name) return showToast("กรุณากรอกชื่อหมวดหมู่");
+        if (CATEGORIES.some(c => c.name === name && c.parent_id === null && c.type === type))
+            return showToast("หมวดหมู่นี้มีอยู่แล้ว");
+
+        const newCat = { id: Date.now(), name, type, parent_id: null };
+        CATEGORIES.push(newCat);
+        if (isSyncActive) await pushToCloud('categories', newCat);
+        document.getElementById('new-cat-name').value = '';
+        renderAll();
+    }
+
+    async function addSubCategory() {
+        const name     = document.getElementById('new-sub-cat-name').value.trim();
+        const parentId = parseInt(document.getElementById('sub-cat-parent-select').value);
+        if (!name)     return showToast("กรุณากรอกชื่อหมวดหมู่ย่อย");
+        if (!parentId) return showToast("กรุณาเลือกหมวดหมู่หลัก");
+
+        const parent = CATEGORIES.find(c => c.id === parentId);
+        if (!parent) return showToast("ไม่พบหมวดหมู่หลัก");
+        if (CATEGORIES.some(c => c.name === name && c.parent_id === parentId))
+            return showToast("หมวดหมู่ย่อยนี้มีอยู่แล้ว");
+
+        const newCat = { id: Date.now(), name, type: parent.type, parent_id: parentId };
+        CATEGORIES.push(newCat);
+        if (isSyncActive) await pushToCloud('categories', newCat);
+        document.getElementById('new-sub-cat-name').value = '';
+        renderAll();
+    }
+
+    // FIX #1: deleteCategory ลบ sub-categories ด้วยเสมอ (รับ id ไม่ใช่ name)
+    async function deleteCategory(id) {
+        const cat = CATEGORIES.find(c => c.id === id);
+        if (!cat) return;
+        if (!confirm(`ลบหมวดหมู่ "${cat.name}" และหมวดหมู่ย่อยทั้งหมด?`)) return;
+
+        const subIds = CATEGORIES.filter(c => c.parent_id === id).map(c => c.id);
+        const allIds = [id, ...subIds];
+
+        // ลบออกจาก local array ทั้งหมดในรอบเดียว
+        CATEGORIES = CATEGORIES.filter(c => !allIds.includes(c.id));
+
+        if (isSyncActive && supabaseClient) {
+            const { error } = await supabaseClient.from('categories').delete().in('id', allIds);
+            if (error) console.error("Category delete error:", error);
+        }
+        renderAll();
+    }
+
+    async function deleteCategoryById(id) {
+        const cat = CATEGORIES.find(c => c.id === id);
+        if (!cat) return;
+        if (!confirm(`ลบหมวดหมู่ย่อย "${cat.name}"?`)) return;
+
+        CATEGORIES = CATEGORIES.filter(c => c.id !== id);
+        if (isSyncActive && supabaseClient) {
+            const { error } = await supabaseClient.from('categories').delete().eq('id', id);
+            if (error) console.error("Sub-category delete error:", error);
+        }
+        renderAll();
+    }
+
+    function copyPrevMonthBudget() {
+        const prev = selectedBudgetMonth === 0 ? 11 : selectedBudgetMonth - 1;
+        if (annualBudgets[prev] && Object.keys(annualBudgets[prev]).length > 0) {
+            annualBudgets[selectedBudgetMonth] = { ...annualBudgets[prev] };
+            renderBudgetEditor();
+            updateCalculations();
+            showToast(`คัดลอกงบจาก ${MONTHS_LIST[prev]} สำเร็จ ✓`, 'success');
+        } else {
+            showToast(`ยังไม่มีข้อมูลงบประมาณของ ${MONTHS_LIST[prev]}`);
+        }
+    }
+
+    function editTx(id) {
+        const tx = transactions.find(t => t.id === id);
+        if (!tx) return;
+        editingTxId = id;
+        switchTab('overview');
+        document.getElementById('form-container').classList.add('edit-mode');
+        document.getElementById('edit-indicator').classList.remove('hidden');
+        setTxType(tx.type);
+
+        // FIX #5: normalize date เป็น YYYY-MM-DD
+        const d = new Date(tx.date);
+        const dateStr = isNaN(d) ? todayStr() : d.toISOString().split('T')[0];
+        document.getElementById('tx-date').value = dateStr;
+
+        document.getElementById('tx-amount').value = tx.amount;
+        document.getElementById('tx-note').value   = tx.note || '';
+
+        // ใช้ from_id ก่อน ถ้าไม่มีให้ค้นหาจากชื่อ (backward compat)
+        const fAcc = tx.from_id
+            ? accounts.find(a => a.id === tx.from_id)
+            : accounts.find(a => a.name === tx.from);
+        if (fAcc) document.getElementById('from-account').value = fAcc.id;
+
+        if (tx.to || tx.to_id) {
+            const tAcc = tx.to_id
+                ? accounts.find(a => a.id === tx.to_id)
+                : accounts.find(a => a.name === tx.to);
+            if (tAcc) document.getElementById('to-account').value = tAcc.id;
+        }
+
+        populateSelectors();
+        if (document.getElementById('tx-category')) {
+            document.getElementById('tx-category').value = tx.category || '';
+            populateSubSelectors();
+            document.getElementById('tx-sub-category').value = tx.sub_category || '';
+        }
+
+        document.getElementById('submit-btn').innerText = "อัปเดตรายการ";
+        document.getElementById('cancel-edit-btn').classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function deleteTx(id) {
+        if (!confirm('ลบรายการนี้?')) return;
+        revertBalance(id);
+        const tx = transactions.find(t => t.id === id);
+        transactions = transactions.filter(t => t.id !== id);
+
+        if (isSyncActive && supabaseClient) {
+            const { error } = await supabaseClient.from('transactions').delete().eq('id', id);
+            if (error) console.error("Delete tx error:", error);
+            // sync account balance ที่เปลี่ยนไป
+            if (tx) {
+                const fAcc = accounts.find(a => a.name === tx.from);
+                const tAcc = tx.to ? accounts.find(a => a.name === tx.to) : null;
+                if (fAcc) await pushToCloud('accounts', fAcc);
+                if (tAcc) await pushToCloud('accounts', tAcc);
             }
         }
+        renderAll();
+    }
 
-        function init() {
-            const elDate = document.getElementById('tx-date');
-            if(elDate) elDate.value = new Date().toISOString().split('T')[0];
-            ensureBudgetIntegrity();
-            initSupabase();
-            renderAll();
+    // ============================================================
+    // 4. NAVIGATION & UI
+    // ============================================================
+
+    function switchTab(tab) {
+        ['overview', 'accounts', 'budget', 'history'].forEach(v => {
+            document.getElementById(`view-${v}`)?.classList.add('hidden');
+            document.getElementById(`nav-${v}`)?.classList.remove('active');
+        });
+        document.getElementById(`view-${tab}`)?.classList.remove('hidden');
+        document.getElementById(`nav-${tab}`)?.classList.add('active');
+
+        // FIX #7: renderCharts เฉพาะตอนแท็บ accounts เท่านั้น
+        if (tab === 'accounts') renderCharts();
+        if (tab === 'budget') {
+            renderBudgetEditor();
+            renderMonthSelector();
+            populateSelectors();
+            renderCategoryList();
         }
+        window.scrollTo(0, 0);
+    }
 
-        window.onload = init;
+    function selectMonth(i) {
+        selectedBudgetMonth = i;
+        renderMonthSelector();
+        renderBudgetEditor();
+        updateCalculations();
+    }
+
+    function openAccountModal(id = null) {
+        editingAccountId = id;
+        if (id) {
+            const acc = accounts.find(a => a.id === id);
+            if (!acc) return;
+            document.getElementById('new-acc-name').value    = acc.name;
+            document.getElementById('new-acc-type').value    = acc.type;
+            document.getElementById('new-acc-balance').value = acc.balance;
+        } else {
+            document.getElementById('new-acc-name').value    = '';
+            document.getElementById('new-acc-type').value    = 'asset';
+            document.getElementById('new-acc-balance').value = '';
+        }
+        document.getElementById('account-modal').classList.remove('hidden');
+    }
+
+    function closeAccountModal() {
+        document.getElementById('account-modal').classList.add('hidden');
+        editingAccountId = null;
+    }
+
+    function showLoading(show, txt) {
+        document.getElementById('loading-screen').classList.toggle('hidden', !show);
+        if (txt) document.getElementById('loading-text').innerText = txt;
+    }
+
+    // Toast notification ใหม่ แทน alert()
+    function showToast(msg, type = 'error') {
+        let toast = document.getElementById('toast-msg');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'toast-msg';
+            toast.className = 'fixed top-20 left-1/2 -translate-x-1/2 z-[200] px-5 py-3 rounded-2xl text-sm font-bold shadow-xl transition-all duration-300';
+            document.body.appendChild(toast);
+        }
+        toast.innerText = msg;
+        toast.style.background = type === 'success' ? '#059669' : '#f43f5e';
+        toast.style.color = '#fff';
+        toast.style.opacity = '1';
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+    }
+
+    function resetForm() {
+        editingTxId = null;
+        document.querySelector('form')?.reset();
+        document.getElementById('form-container').classList.remove('edit-mode');
+        document.getElementById('edit-indicator').classList.add('hidden');
+        document.getElementById('submit-btn').innerText = "บันทึกรายการ";
+        document.getElementById('cancel-edit-btn').classList.add('hidden');
+        setTxType('expense');
+        const elDate = document.getElementById('tx-date');
+        if (elDate) elDate.value = todayStr();
+    }
+
+    // FIX #6: setTxType จัดการ button style ครบ 3 ปุ่ม
+    function setTxType(type) {
+        const typeInp = document.getElementById('tx-type');
+        if (typeInp) typeInp.value = type;
+
+        ['expense', 'income', 'transfer'].forEach(t => {
+            const btn = document.getElementById(`btn-type-${t}`);
+            if (!btn) return;
+            // ลบ active class ทุกอัน
+            btn.classList.remove('active-expense', 'active-income', 'active-transfer', 'inactive');
+            if (t === type) btn.classList.add(`active-${type}`);
+            else            btn.classList.add('inactive');
+        });
+
+        // ซ่อน/แสดง to-account เฉพาะตอน transfer
+        document.getElementById('to-account-div')?.classList.toggle('hidden', type !== 'transfer');
+        // ซ่อน category selector ตอน transfer (ไม่จำเป็น)
+        document.getElementById('cat-select-container')?.classList.toggle('hidden', type === 'transfer');
+        document.getElementById('sub-cat-container')?.classList.toggle('hidden', type === 'transfer');
+
+        populateSelectors();
+    }
+
+    function renderCharts() {
+        const canvas = document.getElementById('assetChart');
+        if (!canvas) return;
+        if (assetChart) { assetChart.destroy(); assetChart = null; }
+
+        const nonZero = accounts.filter(a => parseFloat(a.balance) !== 0);
+        if (nonZero.length === 0) return;
+
+        assetChart = new Chart(canvas.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: nonZero.map(a => a.name),
+                datasets: [{
+                    data:            nonZero.map(a => Math.abs(parseFloat(a.balance))),
+                    backgroundColor: nonZero.map((_, i) => `hsl(${150 + i * 45}, 60%, 50%)`),
+                    borderWidth:     4,
+                    borderColor:     '#ffffff'
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                cutout: '80%',
+                plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } } }
+            }
+        });
+    }
+
+    function ensureBudgetIntegrity() {
+        for (let i = 0; i < 12; i++) {
+            if (!annualBudgets[i]) annualBudgets[i] = {};
+            CATEGORIES.forEach(cat => {
+                if (annualBudgets[i][cat.name] === undefined) annualBudgets[i][cat.name] = 0;
+            });
+        }
+    }
+
+    async function toggleSyncMode() {
+        isSyncActive = !isSyncActive;
+        localStorage.setItem('ws_sync_active', String(isSyncActive));
+        updateSyncUI();
+        if (isSyncActive) await fetchFromCloud();
+    }
+
+    function updateSyncUI() {
+        const btn  = document.getElementById('sync-toggle-btn');
+        const icon = document.getElementById('sync-icon');
+        const dot  = document.getElementById('sync-status');
+        const ind  = document.getElementById('cloud-indicator');
+        if (!btn) return;
+        if (isSyncActive) {
+            icon.innerText = "☁️";
+            dot?.classList.replace('bg-slate-200', 'bg-brand-500');
+            if (ind) { ind.innerText = 'ONLINE'; ind.className = 'text-[8px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-600 uppercase tracking-widest'; }
+        } else {
+            icon.innerText = "💤";
+            dot?.classList.replace('bg-brand-500', 'bg-slate-200');
+            if (ind) { ind.innerText = 'LOCAL'; ind.className = 'text-[8px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 uppercase tracking-widest'; }
+        }
+    }
+
+    // ============================================================
+    // 5. INIT
+    // ============================================================
+
+    function init() {
+        // FIX #5: ตั้งวันที่เริ่มต้นเป็น format YYYY-MM-DD
+        const elDate = document.getElementById('tx-date');
+        if (elDate) elDate.value = todayStr();
+
+        ensureBudgetIntegrity();
+        setTxType('expense');   // set initial button style
+        initSupabase();
+        renderAll();
+    }
+
+    window.onload = init;
     </script>
 </body>
 </html>
