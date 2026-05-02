@@ -10,28 +10,40 @@
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:        #0a0a0f;
-  --bg2:       #111118;
-  --bg3:       #1a1a24;
-  --border:    #2a2a38;
-  --border2:   #3a3a50;
-  --text:      #f0f0f8;
-  --muted:     #7a7a9a;
-  --green:     #00e676;
-  --green-bg:  rgba(0,230,118,.1);
-  --green-brd: rgba(0,230,118,.25);
-  --red:       #ff5370;
-  --red-bg:    rgba(255,83,112,.1);
-  --red-brd:   rgba(255,83,112,.25);
-  --blue:      #64b5f6;
-  --blue-bg:   rgba(100,181,246,.1);
-  --blue-brd:  rgba(100,181,246,.25);
-  --amber:     #ffb74d;
-  --r:         18px;
+  --bg:        #0c0c12;
+  --bg2:       #13131c;
+  --bg3:       #1c1c28;
+  --border:    #2c2c3e;
+  --border2:   #3c3c52;
+  --text:      #e8e8f0;
+  --muted:     #72728a;
+
+  /* Soft sage green */
+  --green:     #5ecea0;
+  --green-bg:  rgba(94,206,160,.1);
+  --green-brd: rgba(94,206,160,.22);
+
+  /* Dusty rose */
+  --red:       #e07a7a;
+  --red-bg:    rgba(224,122,122,.1);
+  --red-brd:   rgba(224,122,122,.22);
+
+  /* Slate blue */
+  --blue:      #7aabe0;
+  --blue-bg:   rgba(122,171,224,.1);
+  --blue-brd:  rgba(122,171,224,.22);
+
+  /* Warm amber */
+  --amber:     #d4a55a;
+  --amber-bg:  rgba(212,165,90,.1);
+  --amber-brd: rgba(212,165,90,.22);
+
+  --r: 18px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Prompt',sans-serif;overscroll-behavior:none;}
-body{padding-bottom:calc(70px + env(safe-area-inset-bottom));}
+/* FIX: nav(60) + FAB top(82) + FAB height(54) + safe margin = 200px */
+body{padding-bottom:calc(200px + env(safe-area-inset-bottom));}
 ::-webkit-scrollbar{width:0;height:0;}
 input,select,button{font-family:'Prompt',sans-serif;border:none;outline:none;background:none;cursor:pointer;}
 input[type=number]{-moz-appearance:textfield;}
@@ -63,18 +75,21 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
 
 /* ── FAB ── */
 #fab{
-  position:fixed;bottom:calc(68px + env(safe-area-inset-bottom) + 14px);right:18px;z-index:150;
+  position:fixed;
+  /* วางอยู่เหนือ nav bar พอดี: nav = 60px + safe-area */
+  bottom:calc(60px + env(safe-area-inset-bottom) + 16px);
+  right:18px;z-index:150;
   width:54px;height:54px;border-radius:17px;
-  background:var(--green);color:#0a0a0f;font-size:26px;font-weight:300;line-height:1;
+  background:var(--green);color:#0c0c12;font-size:26px;font-weight:300;line-height:1;
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 0 0 0 rgba(0,230,118,.5);
+  box-shadow:0 0 0 0 rgba(94,206,160,.4);
   animation:pulse 2.5s infinite;
   transition:transform .15s,background .2s;
 }
 #fab:active{transform:scale(.9);}
-#fab.editing{background:var(--amber);box-shadow:0 0 0 0 rgba(255,183,77,.5);animation:pulseAmber 2.5s infinite;}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,230,118,.4);}50%{box-shadow:0 0 0 8px rgba(0,230,118,0);}}
-@keyframes pulseAmber{0%,100%{box-shadow:0 0 0 0 rgba(255,183,77,.4);}50%{box-shadow:0 0 0 8px rgba(255,183,77,0);}}
+#fab.editing{background:var(--amber);box-shadow:0 0 0 0 rgba(212,165,90,.4);animation:pulseAmber 2.5s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(94,206,160,.4);}50%{box-shadow:0 0 0 8px rgba(94,206,160,0);}}
+@keyframes pulseAmber{0%,100%{box-shadow:0 0 0 0 rgba(212,165,90,.4);}50%{box-shadow:0 0 0 8px rgba(212,165,90,0);}}
 
 /* ── SHEET ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(6px);}
@@ -148,9 +163,9 @@ select.f option{background:var(--bg2);}
 
 /* ── ACC CARD ── */
 .ac{border-radius:var(--r);padding:18px;overflow:hidden;position:relative;}
-.ac.asset{background:linear-gradient(135deg,#0a1a10,#0f2a18);border:1px solid var(--green-brd);}
-.ac.investment{background:linear-gradient(135deg,#0a0f1a,#0f1a2d);border:1px solid var(--blue-brd);}
-.ac.debt{background:linear-gradient(135deg,#1a0a0a,#2d0f0f);border:1px solid var(--red-brd);}
+.ac.asset{background:linear-gradient(135deg,#0e1a14,#152a1e);border:1px solid rgba(94,206,160,.18);}
+.ac.investment{background:linear-gradient(135deg,#0e111a,#151d2d);border:1px solid rgba(122,171,224,.18);}
+.ac.debt{background:linear-gradient(135deg,#1a0e0e,#2a1515);border:1px solid rgba(224,122,122,.18);}
 
 /* ── PROGRESS ── */
 .pbar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:8px;}
@@ -183,7 +198,7 @@ select.f option{background:var(--bg2);}
 #toast.err{border-color:var(--red-brd);color:var(--red);}
 
 /* ── BTN ── */
-.btn-g{width:100%;padding:15px;border-radius:14px;background:var(--green);color:#0a0a0f;font-size:15px;font-weight:800;letter-spacing:.02em;}
+.btn-g{width:100%;padding:15px;border-radius:14px;background:var(--green);color:#0c0c12;font-size:15px;font-weight:800;letter-spacing:.02em;}
 .btn-ghost{width:100%;padding:14px;border-radius:14px;background:var(--bg3);border:1px solid var(--border);font-size:14px;font-weight:700;color:var(--muted);}
 </style>
 </head>
@@ -1003,7 +1018,7 @@ function renderMonthTabs(){
   el.innerHTML=MONTHS_S.map((m,i)=>`
     <button onclick="pickMon(${i})" style="padding:7px 14px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;
       background:${i===selMon?'var(--green)':'var(--bg3)'};
-      color:${i===selMon?'#0a0a0f':'var(--muted)'};
+      color:${i===selMon?'#0c0c12':'var(--muted)'};
       border:1px solid ${i===selMon?'var(--green)':'var(--border)'};
       ${i===cur?'text-decoration:underline;text-underline-offset:2px;':''}">${m}</button>
   `).join('');
