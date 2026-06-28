@@ -322,6 +322,56 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* Transaction Items */
+/* Swipe-to-delete wrapper */
+.tx-swipe-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Red delete button revealed on swipe */
+.tx-delete-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 80px;
+  background: var(--accent-red);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  transition: background 0.15s;
+}
+
+.tx-delete-btn:active {
+  background: #c0392b;
+}
+
+/* The sliding card */
+.tx-swipe-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background 0.15s;
+  position: relative;
+  z-index: 1;
+}
+
+.tx-swipe-inner:active {
+  background: var(--bg-tertiary);
+}
+
 .tx-item {
   display: flex;
   align-items: center;
@@ -386,6 +436,8 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .tx-amount-val.expense { color: var(--accent-red); }
 .tx-amount-val.income { color: var(--accent-green); }
+
+
 
 /* Sheets & Overlays */
 .sheet-overlay {

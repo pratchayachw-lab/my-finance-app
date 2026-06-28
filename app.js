@@ -573,6 +573,44 @@ function triggerEditTransaction(id) {
 // ═══════════════════════════════════════════
 // HTML GENERATION
 // ═══════════════════════════════════════════
+
+let swipeStartX = 0;
+let swipeStartY = 0;
+let activeSwipeItem = null;
+
+function resetAllSwipe() {
+  document.querySelectorAll('.tx-swipe-inner').forEach(el => {
+    el.style.transform = 'translateX(0)';
+  });
+  activeSwipeItem = null;
+}
+
+function setupSwipe(id) {
+  const inner = document.getElementById(`tx-inner-${id}`);
+  if (!inner) return;
+
+  inner.addEventListener('touchstart', e => {
+    swipeStartX = e.touches[0].clientX;
+    swipeStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  inner.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - swipeStartX;
+    const dy = Math.abs(e.changedTouches[0].clientY - swipeStartY);
+    if (dy > 30) return; // vertical scroll — ignore
+    if (dx < -50) {
+      // swipe left → reveal delete
+      resetAllSwipe();
+      inner.style.transform = 'translateX(-80px)';
+      activeSwipeItem = inner;
+    } else if (dx > 20) {
+      // swipe right → hide
+      inner.style.transform = 'translateX(0)';
+      activeSwipeItem = null;
+    }
+  }, { passive: true });
+}
+
 function createTransactionHtml(tx) {
   const isIncome = tx.type === 'income';
   const isExpense = tx.type === 'expense';
@@ -580,21 +618,44 @@ function createTransactionHtml(tx) {
   const subLabel = tx.sub_category ? ` <span class="text-muted">›</span> ${tx.sub_category}` : '';
   const noteLabel = tx.note ? `<span class="text-muted"> · ${tx.note}</span>` : '';
   const colorClass = isIncome ? 'income' : (isExpense ? 'expense' : 'transfer');
-  
+
   return `
-    <div class="tx-item" onclick="triggerEditTransaction(${tx.id})">
-      <div class="tx-icon-wrap ${colorClass}">${icon}</div>
-      <div class="tx-details">
-        <div class="tx-title">${tx.category || '—'}${subLabel}</div>
-        <div class="tx-subtitle">${tx.from || ''}${noteLabel}</div>
+    <div class="tx-swipe-wrap">
+      <div class="tx-delete-btn" onclick="event.stopPropagation(); deleteTransaction(${tx.id})">
+        <span style="font-size:20px;">🗑️</span>
+        <span style="font-size:11px;font-weight:700;">ลบ</span>
       </div>
-      <div class="tx-amount">
-        <div class="tx-amount-val ${colorClass}">฿${formatNum(tx.amount)}</div>
-        <button onclick="event.stopPropagation(); deleteTransaction(${tx.id})" style="font-size:9px;font-weight:700;color:var(--text-muted);padding-top:4px;">ลบ</button>
+      <div class="tx-swipe-inner" id="tx-inner-${tx.id}" onclick="triggerEditTransaction(${tx.id})">
+        <div class="tx-icon-wrap ${colorClass}">${icon}</div>
+        <div class="tx-details">
+          <div class="tx-title">${tx.category || '—'}${subLabel}</div>
+          <div class="tx-subtitle">${tx.from || ''}${noteLabel}</div>
+        </div>
+        <div class="tx-amount">
+          <div class="tx-amount-val ${colorClass}">฿${formatNum(tx.amount)}</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">← ปัดเพื่อลบ</div>
+        </div>
       </div>
     </div>
   `;
 }
+
+function initSwipeListeners() {
+  // setup after render
+  document.querySelectorAll('.tx-swipe-inner').forEach(el => {
+    const id = el.id.replace('tx-inner-', '');
+    const tx = transactions.find(t => String(t.id) === id);
+    if (tx) setupSwipe(tx.id);
+  });
+}
+
+// reset swipe on any outside tap
+document.addEventListener('touchstart', e => {
+  if (activeSwipeItem && !activeSwipeItem.contains(e.target)) {
+    resetAllSwipe();
+  }
+}, { passive: true });
+
 
 function renderRecentTransactions() {
   const el = document.getElementById('recent-list');
@@ -603,6 +664,7 @@ function renderRecentTransactions() {
   
   if (recents.length) {
     el.innerHTML = recents.map(createTransactionHtml).join('');
+    setTimeout(initSwipeListeners, 0);
   } else {
     el.innerHTML = `<div style="text-align:center;padding:36px 0;color:var(--text-muted);font-size:13px;">กด + เพื่อบันทึกรายการแรก</div>`;
   }
@@ -635,6 +697,7 @@ function renderHistoryList() {
     const displayDate = dateStr ? new Date(dateStr + 'T00:00:00').toLocaleDateString('th-TH', { weekday:'short', day:'numeric', month:'short' }) : '—';
     return `<div class="date-separator">${displayDate}</div>` + txs.map(createTransactionHtml).join('');
   }).join('');
+  setTimeout(initSwipeListeners, 0);
 }
 
 // ═══════════════════════════════════════════
