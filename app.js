@@ -423,8 +423,8 @@ function openTransactionSheet(existingId = null) {
     }
     
     document.getElementById('btn-save-tx').textContent = 'อัปเดตรายการ';
-    document.getElementById('btn-cancel-tx').style.display = 'block';
     document.getElementById('badge-editing').style.display = 'block';
+    document.getElementById('badge-editing-placeholder').style.display = 'none';
     document.getElementById('fab-add').classList.add('editing');
     
     setTransactionType(tx.type);
@@ -443,8 +443,8 @@ function openTransactionSheet(existingId = null) {
     }
   } else {
     document.getElementById('btn-save-tx').textContent = 'บันทึกรายการ';
-    document.getElementById('btn-cancel-tx').style.display = 'none';
     document.getElementById('badge-editing').style.display = 'none';
+    document.getElementById('badge-editing-placeholder').style.display = 'block';
     document.getElementById('fab-add').classList.remove('editing');
     setTransactionType('expense');
   }

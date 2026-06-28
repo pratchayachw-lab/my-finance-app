@@ -426,11 +426,30 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .sheet-handle {
-  width: 40px;
+  width: 100%;
+  padding: 16px 0 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: rgba(255,255,255,0.05);
+}
+
+.sheet-handle::before {
+  content: '';
+  display: block;
+  width: 44px;
   height: 4px;
   background: var(--border-strong);
   border-radius: var(--radius-full);
-  margin: var(--spacing-md) auto;
+  transition: background 0.2s;
+}
+
+.sheet-handle:active::before {
+  background: var(--text-muted);
 }
 
 /* Numpad */
