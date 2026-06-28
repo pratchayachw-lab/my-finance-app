@@ -933,7 +933,6 @@ function renderBudgetProgress() {
     const relatedCats = subs.length ? subs : [m];
     
     const budgetLimit = relatedCats.reduce((sum, c) => sum + (parseFloat(b[c.name]) || 0), 0);
-    if (!budgetLimit) return '';
     
     const actualTxs = transactions.filter(t => {
       const d = new Date(t.date);
@@ -942,26 +941,34 @@ function renderBudgetProgress() {
     });
     
     const actualSpent = actualTxs.reduce((sum, t) => sum + parseFloat(t.amount), 0);
-    const pct = Math.min(budgetLimit ? (actualSpent / budgetLimit) * 100 : 0, 100);
-    const isOver = actualSpent > budgetLimit;
+
+    if (!budgetLimit && actualSpent === 0) return '';
+    
+    const pct = budgetLimit ? Math.min((actualSpent / budgetLimit) * 100, 100) : 100;
+    const isOver = budgetLimit ? actualSpent > budgetLimit : true;
     
     let colorClass = 'var(--accent-green)';
     if (isOver) colorClass = 'var(--accent-red)';
     else if (pct > 75) colorClass = 'var(--accent-amber)';
     
+    const limitDisplay = budgetLimit ? `/ ฿${formatShort(budgetLimit)}` : '(ไม่ได้ตั้งงบ)';
+    const warningMsg = budgetLimit 
+      ? `⚠️ เกินงบ ฿${formatShort(actualSpent - budgetLimit)}` 
+      : `⚠️ ไม่ได้ตั้งงบประมาณ (ใช้ไป ฿${formatShort(actualSpent)})`;
+
     return `
       <div class="glass-card-sm" style="padding:16px; margin-bottom:10px;">
         <div class="flex-between">
           <span style="font-size:14px;font-weight:600;">${getEmoji(m.name)} ${m.name}</span>
           <div style="text-align:right;">
             <span style="font-size:14px;font-weight:800;color:${isOver ? 'var(--accent-red)' : 'var(--text-main)'};">฿${formatShort(actualSpent)}</span>
-            <span style="font-size:11px;color:var(--text-muted);"> / ฿${formatShort(budgetLimit)}</span>
+            <span style="font-size:11px;color:var(--text-muted);"> ${limitDisplay}</span>
           </div>
         </div>
         <div class="progress-container">
           <div class="progress-fill" style="width:${pct}%;background:${colorClass};"></div>
         </div>
-        ${isOver ? `<div style="font-size:11px;color:var(--accent-red);font-weight:600;margin-top:8px;">⚠️ เกินงบ ฿${formatShort(actualSpent - budgetLimit)}</div>` : ''}
+        ${isOver ? `<div style="font-size:11px;color:var(--accent-red);font-weight:600;margin-top:8px;">${warningMsg}</div>` : ''}
       </div>
     `;
   }).filter(Boolean);
