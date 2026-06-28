@@ -467,17 +467,19 @@ function closeTransactionSheet() {
 function revertTransactionBalance(id) {
   const tx = transactions.find(t => t.id === id);
   if (!tx) return;
-  const fromAcc = accounts.find(a => a.name === tx.from);
-  const toAcc = tx.to ? accounts.find(a => a.name === tx.to) : null;
-  
+  // Use id-based lookup first, fall back to name
+  const fromAcc = accounts.find(a => a.id === tx.from_id) || accounts.find(a => a.name === tx.from);
+  const toAcc = tx.to_id ? accounts.find(a => a.id === tx.to_id) : (tx.to ? accounts.find(a => a.name === tx.to) : null);
+
   if (tx.type === 'expense') {
-    if (fromAcc) fromAcc.balance += parseFloat(tx.amount);
+    if (fromAcc) fromAcc.balance = parseFloat(fromAcc.balance) + parseFloat(tx.amount);
   } else if (tx.type === 'income') {
-    if (fromAcc) fromAcc.balance -= parseFloat(tx.amount);
+    if (fromAcc) fromAcc.balance = parseFloat(fromAcc.balance) - parseFloat(tx.amount);
   } else if (tx.type === 'transfer') {
-    if (fromAcc) fromAcc.balance += parseFloat(tx.amount);
-    if (toAcc) toAcc.balance -= parseFloat(tx.amount);
+    if (fromAcc) fromAcc.balance = parseFloat(fromAcc.balance) + parseFloat(tx.amount);
+    if (toAcc) toAcc.balance = parseFloat(toAcc.balance) - parseFloat(tx.amount);
   }
+  saveDataLocally(); // ensure revert is persisted even when offline
 }
 
 async function handleSaveTransaction() {
@@ -489,11 +491,16 @@ async function handleSaveTransaction() {
   const fromAcc = accounts.find(a => a.id === fromId);
   if (!fromAcc) return showToast('ไม่พบบัญชีต้นทาง');
 
-  // Balance validation for expenses
-  if (currentTxType !== 'income' && fromAcc.type !== 'debt') {
-    const originalAmount = editTxId ? (transactions.find(t => t.id === editTxId)?.amount || 0) : 0;
-    const effectiveBalance = fromAcc.balance + originalAmount;
-    if (amount > effectiveBalance) return showToast('ยอดเงินในบัญชีไม่เพียงพอ');
+  // Balance validation for expenses and transfers
+  if (currentTxType === 'expense' && fromAcc.type !== 'debt') {
+    const originalAmount = editTxId ? (parseFloat(transactions.find(t => t.id === editTxId)?.amount) || 0) : 0;
+    const effectiveBalance = parseFloat(fromAcc.balance) + originalAmount;
+    if (amount > effectiveBalance) return showToast(`ยอดในบัญชี "${fromAcc.name}" ไม่เพียงพอ (มี ฿${formatNum(effectiveBalance)})`);
+  }
+  if (currentTxType === 'transfer' && fromAcc.type !== 'debt') {
+    const originalAmount = editTxId ? (parseFloat(transactions.find(t => t.id === editTxId)?.amount) || 0) : 0;
+    const effectiveBalance = parseFloat(fromAcc.balance) + originalAmount;
+    if (amount > effectiveBalance) return showToast(`ยอดในบัญชี "${fromAcc.name}" ไม่เพียงพอสำหรับโอน (มี ฿${formatNum(effectiveBalance)})`);
   }
   
   if (editTxId) revertTransactionBalance(editTxId);
@@ -574,43 +581,6 @@ function triggerEditTransaction(id) {
 // HTML GENERATION
 // ═══════════════════════════════════════════
 
-let swipeStartX = 0;
-let swipeStartY = 0;
-let activeSwipeItem = null;
-
-function resetAllSwipe() {
-  document.querySelectorAll('.tx-swipe-inner').forEach(el => {
-    el.style.transform = 'translateX(0)';
-  });
-  activeSwipeItem = null;
-}
-
-function setupSwipe(id) {
-  const inner = document.getElementById(`tx-inner-${id}`);
-  if (!inner) return;
-
-  inner.addEventListener('touchstart', e => {
-    swipeStartX = e.touches[0].clientX;
-    swipeStartY = e.touches[0].clientY;
-  }, { passive: true });
-
-  inner.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - swipeStartX;
-    const dy = Math.abs(e.changedTouches[0].clientY - swipeStartY);
-    if (dy > 30) return; // vertical scroll — ignore
-    if (dx < -50) {
-      // swipe left → reveal delete
-      resetAllSwipe();
-      inner.style.transform = 'translateX(-80px)';
-      activeSwipeItem = inner;
-    } else if (dx > 20) {
-      // swipe right → hide
-      inner.style.transform = 'translateX(0)';
-      activeSwipeItem = null;
-    }
-  }, { passive: true });
-}
-
 function createTransactionHtml(tx) {
   const isIncome = tx.type === 'income';
   const isExpense = tx.type === 'expense';
@@ -618,53 +588,30 @@ function createTransactionHtml(tx) {
   const subLabel = tx.sub_category ? ` <span class="text-muted">›</span> ${tx.sub_category}` : '';
   const noteLabel = tx.note ? `<span class="text-muted"> · ${tx.note}</span>` : '';
   const colorClass = isIncome ? 'income' : (isExpense ? 'expense' : 'transfer');
+  // Show transfer destination
+  const transferLabel = tx.type === 'transfer' && tx.to ? `<span class="text-muted"> → ${tx.to}</span>` : '';
 
   return `
-    <div class="tx-swipe-wrap">
-      <div class="tx-delete-btn" onclick="event.stopPropagation(); deleteTransaction(${tx.id})">
-        <span style="font-size:20px;">🗑️</span>
-        <span style="font-size:11px;font-weight:700;">ลบ</span>
+    <div class="tx-item" onclick="triggerEditTransaction(${tx.id})">
+      <div class="tx-icon-wrap ${colorClass}">${icon}</div>
+      <div class="tx-details">
+        <div class="tx-title">${tx.category || '—'}${subLabel}${transferLabel}</div>
+        <div class="tx-subtitle">${tx.from || ''}${noteLabel}</div>
       </div>
-      <div class="tx-swipe-inner" id="tx-inner-${tx.id}" onclick="triggerEditTransaction(${tx.id})">
-        <div class="tx-icon-wrap ${colorClass}">${icon}</div>
-        <div class="tx-details">
-          <div class="tx-title">${tx.category || '—'}${subLabel}</div>
-          <div class="tx-subtitle">${tx.from || ''}${noteLabel}</div>
-        </div>
-        <div class="tx-amount">
-          <div class="tx-amount-val ${colorClass}">฿${formatNum(tx.amount)}</div>
-          <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">← ปัดเพื่อลบ</div>
-        </div>
+      <div class="tx-amount">
+        <div class="tx-amount-val ${colorClass}">฿${formatNum(tx.amount)}</div>
       </div>
+      <button class="tx-delete-x" onclick="event.stopPropagation(); deleteTransaction(${tx.id})" aria-label="ลบ">✕</button>
     </div>
   `;
 }
-
-function initSwipeListeners() {
-  // setup after render
-  document.querySelectorAll('.tx-swipe-inner').forEach(el => {
-    const id = el.id.replace('tx-inner-', '');
-    const tx = transactions.find(t => String(t.id) === id);
-    if (tx) setupSwipe(tx.id);
-  });
-}
-
-// reset swipe on any outside tap
-document.addEventListener('touchstart', e => {
-  if (activeSwipeItem && !activeSwipeItem.contains(e.target)) {
-    resetAllSwipe();
-  }
-}, { passive: true });
-
 
 function renderRecentTransactions() {
   const el = document.getElementById('recent-list');
   if (!el) return;
   const recents = transactions.slice(0, 8);
-  
   if (recents.length) {
     el.innerHTML = recents.map(createTransactionHtml).join('');
-    setTimeout(initSwipeListeners, 0);
   } else {
     el.innerHTML = `<div style="text-align:center;padding:36px 0;color:var(--text-muted);font-size:13px;">กด + เพื่อบันทึกรายการแรก</div>`;
   }
@@ -673,32 +620,33 @@ function renderRecentTransactions() {
 function renderHistoryList() {
   const el = document.getElementById('history-list');
   if (!el) return;
-  
+
   const query = (document.getElementById('search-input')?.value || '').toLowerCase();
-  const filtered = transactions.filter(t => 
-    (t.note || '').toLowerCase().includes(query) || 
-    (t.category || '').toLowerCase().includes(query) || 
+  const filtered = transactions.filter(t =>
+    (t.note || '').toLowerCase().includes(query) ||
+    (t.category || '').toLowerCase().includes(query) ||
     (t.sub_category || '').toLowerCase().includes(query)
   );
-  
+
   if (!filtered.length) {
     el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px;">ไม่พบรายการที่ค้นหา</div>`;
     return;
   }
-  
+
   const byDate = {};
   filtered.forEach(t => {
     const d = t.date?.split('T')[0] || '';
     if (!byDate[d]) byDate[d] = [];
     byDate[d].push(t);
   });
-  
+
   el.innerHTML = Object.entries(byDate).map(([dateStr, txs]) => {
     const displayDate = dateStr ? new Date(dateStr + 'T00:00:00').toLocaleDateString('th-TH', { weekday:'short', day:'numeric', month:'short' }) : '—';
     return `<div class="date-separator">${displayDate}</div>` + txs.map(createTransactionHtml).join('');
   }).join('');
-  setTimeout(initSwipeListeners, 0);
 }
+
+
 
 // ═══════════════════════════════════════════
 // ACCOUNTS MANAGEMENT
@@ -738,7 +686,22 @@ function closeAccountSheet() {
   editAccId = null;
 }
 
+async function handleDeleteAccount(id) {
+  const acc = accounts.find(a => a.id === id);
+  if (!acc) return;
+  const hasTxs = transactions.some(t => t.from_id === id || t.to_id === id);
+  const warn = hasTxs ? '\n\n⚠️ มีรายการธุรกรรมที่เชื่อมกับบัญชีนี้อยู่' : '';
+  if (!confirm(`ลบบัญชี "${acc.name}" หรือไม่?${warn}`)) return;
+  accounts = accounts.filter(a => a.id !== id);
+  if (db && syncOn) await db.from('accounts').delete().eq('id', id);
+  updateAllViews();
+  renderAccountsList();
+  renderAccountsChart();
+  showToast(`ลบบัญชี "${acc.name}" เรียบร้อยแล้ว`, 'success');
+}
+
 async function handleSaveAccount() {
+
   const name = document.getElementById('input-acc-name').value.trim();
   const type = document.getElementById('input-acc-type').value;
   const balance = parseFloat(document.getElementById('input-acc-balance').value) || 0;
@@ -786,7 +749,10 @@ function renderAccountsList() {
             <div style="font-size:17px;font-weight:800;margin-top:8px;letter-spacing:-0.3px;">${a.name}</div>
             <div style="font-size:26px;font-weight:900;letter-spacing:-1px;margin-top:4px;color:${bal < 0 ? 'var(--accent-red)' : 'var(--text-main)'};">฿${formatNum(bal, 2)}</div>
           </div>
-          <button onclick="openAccountSheet(${a.id})" class="btn-icon">✏️</button>
+          <div style="display:flex;gap:8px;">
+            <button onclick="openAccountSheet(${a.id})" class="btn-icon" title="แก้ไข">✏️</button>
+            <button onclick="handleDeleteAccount(${a.id})" class="btn-icon" style="color:var(--accent-red);" title="ลบบัญชี">🗑️</button>
+          </div>
         </div>
       </div>
     `;
